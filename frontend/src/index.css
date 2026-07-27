@@ -1,0 +1,104 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  color-scheme: light;
+  --surface-0: #f9f9f7;
+  --surface-1: #fcfcfb;
+  --surface-2: #ffffff;
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted: #898781;
+  --border: rgba(11, 11, 11, 0.1);
+  --border-strong: #e1e0d9;
+
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-serious: #ec835a;
+  --status-critical: #d03b3b;
+
+  /* fixed categorical order — never reassigned per view, identity always paired with a label */
+  --agent-gemini: #2a78d6;
+  --agent-claude: #eb6834;
+  --agent-openai: #1baf7a;
+  --agent-mistral: #eda100;
+  --agent-cohere: #e87ba4;
+  --agent-together: #008300;
+  --agent-grok: #4a3aa7;
+  --agent-groq: #e34948;
+  --agent-perplexity: #0891b2;
+  --agent-deepseek: #a3492f;
+  --agent-huggingface: #5b5bd6;
+}
+
+.dark {
+  color-scheme: dark;
+  --surface-0: #0d0d0d;
+  --surface-1: #161615;
+  --surface-2: #1e1e1d;
+  --text-primary: #ffffff;
+  --text-secondary: #c3c2b7;
+  --text-muted: #898781;
+  --border: rgba(255, 255, 255, 0.1);
+  --border-strong: #2c2c2a;
+
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-serious: #ec835a;
+  --status-critical: #e66767;
+
+  --agent-gemini: #3987e5;
+  --agent-claude: #d95926;
+  --agent-openai: #199e70;
+  --agent-mistral: #c98500;
+  --agent-cohere: #d55181;
+  --agent-together: #008300;
+  --agent-grok: #9085e9;
+  --agent-groq: #e66767;
+  --agent-perplexity: #0e93a3;
+  --agent-deepseek: #c2703f;
+  --agent-huggingface: #7c7cf0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--surface-0);
+  color: var(--text-primary);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@keyframes pulse-soft {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+.animate-pulse-soft {
+  animation: pulse-soft 1.6s ease-in-out infinite;
+}
