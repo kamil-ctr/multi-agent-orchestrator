@@ -80,18 +80,39 @@ export default function ChatPage() {
               updateTurn(id, (t) => ({
                 agentStates: { ...t.agentStates, [evt.agent]: { status: "running" } },
               }));
+            } else if (evt.type === "agent_token") {
+              updateTurn(id, (t) => {
+                const prev = t.agentStates[evt.agent] || { status: "running" };
+                const text = (prev.text || "") + evt.token;
+                return {
+                  agentStates: {
+                    ...t.agentStates,
+                    [evt.agent]: { ...prev, status: "running", text, tokenCount: (prev.tokenCount || 0) + 1 },
+                  },
+                };
+              });
             } else if (evt.type === "agent_done") {
               updateTurn(id, (t) => ({
                 agentStates: {
                   ...t.agentStates,
-                  [evt.agent]: { status: "success", latencyMs: evt.latency_ms, score: evt.score },
+                  [evt.agent]: {
+                    ...t.agentStates[evt.agent],
+                    status: "success",
+                    latencyMs: evt.latency_ms,
+                    score: evt.score,
+                  },
                 },
               }));
             } else if (evt.type === "agent_error") {
               updateTurn(id, (t) => ({
                 agentStates: {
                   ...t.agentStates,
-                  [evt.agent]: { status: evt.status, latencyMs: evt.latency_ms, error: evt.error },
+                  [evt.agent]: {
+                    ...t.agentStates[evt.agent],
+                    status: evt.status,
+                    latencyMs: evt.latency_ms,
+                    error: evt.error,
+                  },
                 },
               }));
             } else if (evt.type === "synthesis_done") {

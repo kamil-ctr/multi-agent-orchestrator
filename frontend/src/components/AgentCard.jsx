@@ -1,7 +1,10 @@
+import { useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Check, X, Clock, AlertTriangle, MinusCircle } from "lucide-react";
 import AgentAvatar from "./AgentAvatar";
 import { agentColor, agentLabel, STATUS_META } from "../api/agentMeta";
+
+const FAILED_STATUSES = new Set(["error", "timeout", "rate_limited"]);
 
 const STATUS_ICON = {
   waiting: MinusCircle,
@@ -27,13 +30,25 @@ const STATUS_ICON = {
  * @param {number} [props.latencyMs] - Response latency in milliseconds, once known.
  * @param {number} [props.score] - Provisional heuristic score (0-10), shown only on success.
  * @param {string} [props.error] - Error message, shown for error/timeout/rate_limited states.
+ * @param {string} [props.text] - Text streamed so far (agent_token events); shown live while running,
+ *   and left visible (dimmed) if the agent fails mid-stream instead of disappearing.
+ * @param {number} [props.tokenCount] - Number of agent_token chunks received so far.
  * @returns {JSX.Element}
  */
-export default function AgentCard({ name, status = "waiting", latencyMs, score, error }) {
+export default function AgentCard({ name, status = "waiting", latencyMs, score, error, text, tokenCount }) {
   const meta = STATUS_META[status] ?? STATUS_META.waiting;
   const Icon = STATUS_ICON[status] ?? MinusCircle;
   const color = agentColor(name);
   const isRunning = status === "running";
+  const isFailed = FAILED_STATUSES.has(status);
+  const showStreamedText = !!text && (isRunning || isFailed);
+  const textRef = useRef(null);
+
+  useEffect(() => {
+    if (textRef.current) {
+      textRef.current.scrollTop = textRef.current.scrollHeight;
+    }
+  }, [text]);
 
   return (
     <motion.div
@@ -57,8 +72,27 @@ export default function AgentCard({ name, status = "waiting", latencyMs, score, 
 
       <div className="flex items-center justify-between text-xs" style={{ color: "var(--text-muted)" }}>
         <span style={{ color: meta.color }}>{meta.label}</span>
-        {latencyMs != null && <span>{Math.round(latencyMs)}ms</span>}
+        {isRunning && tokenCount > 0 ? (
+          <span className="tabular-nums">{tokenCount} tok</span>
+        ) : (
+          latencyMs != null && <span>{Math.round(latencyMs)}ms</span>
+        )}
       </div>
+
+      {showStreamedText && (
+        <div
+          ref={textRef}
+          className="max-h-16 overflow-y-auto whitespace-pre-wrap break-words rounded-md px-2 py-1.5 text-xs leading-snug"
+          style={{ background: "var(--surface-1)", color: "var(--text-secondary)", opacity: isFailed ? 0.7 : 1 }}
+        >
+          {text}
+          {isRunning && (
+            <span className="animate-blink-cursor" style={{ color }}>
+              ▍
+            </span>
+          )}
+        </div>
+      )}
 
       {status === "success" && score != null && (
         <div className="flex items-center gap-2">

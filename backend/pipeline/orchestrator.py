@@ -15,7 +15,7 @@ from core.cost_tracker import total_tokens as sum_tokens
 from core.history import HistoryStore
 from core.logger import get_logger
 from core.schemas import AgentResponse, AgentStatus, ImageInput, PipelineResult
-from pipeline.dispatch import dispatch_streaming, dispatch_streaming_mm
+from pipeline.dispatch import dispatch_streaming, dispatch_streaming_mm, dispatch_streaming_tokens
 from pipeline.evaluate import compute_confidence, heuristic_score, llm_judge_refine, rank, score_all_heuristic
 from pipeline.normalize import normalize_responses, summarize
 from pipeline.preprocess import classify_query_type, expand_query, preprocess
@@ -300,8 +300,18 @@ class Orchestrator:
                     }
                 )
 
-        async for _ in dispatch_streaming_mm(agents, prompt_selector, on_result=handle_result):
-            pass
+        def handle_token(agent_name: str, token: str) -> None:
+            if on_event:
+                on_event({"type": "agent_token", "agent": agent_name, "token": token})
+
+        if self.config.streaming_enabled:
+            async for _ in dispatch_streaming_tokens(
+                agents, prompt_selector, on_token=handle_token, on_result=handle_result
+            ):
+                pass
+        else:
+            async for _ in dispatch_streaming_mm(agents, prompt_selector, on_result=handle_result):
+                pass
 
         responses = normalize_responses(responses)
         summary = summarize(responses)

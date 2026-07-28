@@ -52,6 +52,7 @@ class AppConfig:
     log_level: str = "INFO"
     data_dir: Path = PROJECT_ROOT / "data"
     top_n_for_synthesis: int = 3
+    streaming_enabled: bool = True
     raw: dict[str, Any] = field(default_factory=dict)
 
 
@@ -94,6 +95,8 @@ def load_config(config_path: str | Path | None = None) -> AppConfig:
     data_dir = Path(env_data_dir) if env_data_dir else PROJECT_ROOT / raw.get("data_dir", "data")
     data_dir.mkdir(parents=True, exist_ok=True)
 
+    streaming_enabled = os.getenv("STREAMING_ENABLED", "true").strip().lower() not in ("false", "0", "no")
+
     return AppConfig(
         agents=agents,
         default_timeout_s=default_timeout,
@@ -103,5 +106,6 @@ def load_config(config_path: str | Path | None = None) -> AppConfig:
         log_level=raw.get("log_level", "INFO"),
         data_dir=data_dir,
         top_n_for_synthesis=int(raw.get("top_n_for_synthesis", 3)),
+        streaming_enabled=streaming_enabled,
         raw=raw,
     )

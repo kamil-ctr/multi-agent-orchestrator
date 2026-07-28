@@ -46,7 +46,7 @@ export async function createQuery(payload) {
  */
 export function streamQuery(queryId, onEvent, onError) {
   const es = new EventSource(`${API_BASE}/query/${queryId}/stream`);
-  const types = ["agent_start", "agent_done", "agent_error", "synthesis_done", "fatal_error"];
+  const types = ["agent_start", "agent_token", "agent_done", "agent_error", "synthesis_done", "fatal_error"];
 
   const handler = (evt) => {
     try {

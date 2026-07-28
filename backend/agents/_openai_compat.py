@@ -4,6 +4,8 @@ for any future provider with the same request/response shape.
 """
 from __future__ import annotations
 
+import json
+from collections.abc import AsyncIterator
 from typing import Any
 
 import httpx
@@ -11,15 +13,9 @@ import httpx
 from core.schemas import ImageInput
 
 
-async def openai_chat_completion(
-    client: httpx.AsyncClient,
-    url: str,
-    api_key: str,
-    model: str,
-    prompt: str,
-    image: ImageInput | None = None,
-    extra_body: dict[str, Any] | None = None,
-) -> str:
+def _build_payload(
+    model: str, prompt: str, image: ImageInput | None, extra_body: dict[str, Any] | None
+) -> dict[str, Any]:
     if image:
         content: Any = [
             {"type": "text", "text": prompt},
@@ -34,6 +30,19 @@ async def openai_chat_completion(
     }
     if extra_body:
         payload.update(extra_body)
+    return payload
+
+
+async def openai_chat_completion(
+    client: httpx.AsyncClient,
+    url: str,
+    api_key: str,
+    model: str,
+    prompt: str,
+    image: ImageInput | None = None,
+    extra_body: dict[str, Any] | None = None,
+) -> str:
+    payload = _build_payload(model, prompt, image, extra_body)
 
     resp = await client.post(
         url,
@@ -46,3 +55,48 @@ async def openai_chat_completion(
     resp.raise_for_status()
     data = resp.json()
     return data["choices"][0]["message"]["content"]
+
+
+async def openai_chat_completion_stream(
+    client: httpx.AsyncClient,
+    url: str,
+    api_key: str,
+    model: str,
+    prompt: str,
+    image: ImageInput | None = None,
+    extra_body: dict[str, Any] | None = None,
+) -> AsyncIterator[str]:
+    """Streaming variant of openai_chat_completion — yields text deltas as they arrive.
+
+    Parses the standard OpenAI-style `data: {...}` SSE lines, terminated by
+    a `data: [DONE]` sentinel line.
+    """
+    payload = _build_payload(model, prompt, image, extra_body)
+    payload["stream"] = True
+
+    async with client.stream(
+        "POST",
+        url,
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        },
+        json=payload,
+    ) as resp:
+        resp.raise_for_status()
+        async for line in resp.aiter_lines():
+            if not line.startswith("data: "):
+                continue
+            data = line[len("data: ") :].strip()
+            if data == "[DONE]":
+                break
+            try:
+                chunk = json.loads(data)
+            except json.JSONDecodeError:
+                continue
+            choices = chunk.get("choices") or []
+            if not choices:
+                continue
+            text = choices[0].get("delta", {}).get("content")
+            if text:
+                yield text

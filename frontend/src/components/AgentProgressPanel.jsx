@@ -12,7 +12,7 @@ const TERMINAL = new Set(["success", "error", "timeout", "rate_limited", "disabl
  * itself, it's purely a presentation layer over whatever state it's given.
  *
  * @param {Object} props
- * @param {Object.<string, {status: string, latencyMs?: number, score?: number, error?: string}>} props.agentStates
+ * @param {Object.<string, {status: string, latencyMs?: number, score?: number, error?: string, text?: string, tokenCount?: number}>} props.agentStates
  *   Map of agent name to its current live state, keyed by agent identifier.
  * @returns {JSX.Element}
  */
@@ -53,6 +53,8 @@ export default function AgentProgressPanel({ agentStates }) {
               latencyMs={e.latencyMs}
               score={e.score}
               error={e.error}
+              text={e.text}
+              tokenCount={e.tokenCount}
             />
           ))}
         </AnimatePresence>

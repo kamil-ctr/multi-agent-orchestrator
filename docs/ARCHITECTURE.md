@@ -34,9 +34,15 @@ sequenceDiagram
     O->>P: classify_query_type() + expand_query()
     P-->>O: query_type, expanded_prompt
 
-    O->>D: dispatch_streaming_mm(agents, prompt_selector)
+    O->>D: dispatch_streaming_tokens(agents, prompt_selector)
     par for each configured agent
-        D->>Agents: generate(prompt, image?)
+        D->>Agents: generate_stream(prompt, image?)
+        loop for each text delta
+            Agents-->>D: token
+            D-->>API: agent_token {agent, token}
+            API-->>FE: SSE event
+            FE-->>User: live token append per card
+        end
         Agents-->>D: AgentResponse (success/error/timeout)
         D-->>API: agent_start / agent_done / agent_error
         API-->>FE: SSE event

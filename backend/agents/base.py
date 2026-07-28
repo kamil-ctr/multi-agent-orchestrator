@@ -10,6 +10,7 @@ import asyncio
 import random
 import time
 from abc import ABC, abstractmethod
+from collections.abc import AsyncIterator
 
 import httpx
 
@@ -63,6 +64,18 @@ class BaseAgent(ABC):
         rather than swallowing errors — retry/backoff is handled by generate().
         """
         raise NotImplementedError
+
+    async def _call_api_stream(
+        self, client: httpx.AsyncClient, prompt: str, image: ImageInput | None = None
+    ) -> AsyncIterator[str]:
+        """Perform the actual HTTP call in streaming mode, yielding text deltas as they arrive.
+
+        Optional — only overridden by adapters that support token-by-token
+        streaming (see generate_stream()). Must raise the same exception
+        types as _call_api on failure.
+        """
+        raise NotImplementedError
+        yield  # pragma: no cover - makes this an async generator function
 
     async def generate(self, prompt: str, image: ImageInput | None = None) -> AgentResponse:
         """Call this agent with retry/backoff/timeout, never raising on failure.
@@ -149,5 +162,96 @@ class BaseAgent(ABC):
             error=last_error,
             latency_ms=latency_ms,
             retries=attempt - 1,
+            model=self.config.model,
+        )
+
+    async def generate_stream(
+        self, prompt: str, image: ImageInput | None = None
+    ) -> AsyncIterator[tuple[str, str | AgentResponse]]:
+        """Stream this agent's response token-by-token via _call_api_stream.
+
+        Yields ("token", str) for each text delta as it arrives, followed by
+        exactly one terminal event: ("done", AgentResponse) on success or
+        ("error", AgentResponse) on failure. Retry-with-backoff only applies
+        before any token has been yielded — once the caller has seen partial
+        output, restarting the response from scratch would duplicate/garble
+        what's already been shown, so a mid-stream failure instead finalizes
+        immediately as an error with whatever text was accumulated.
+
+        Args:
+            prompt: The text prompt to send.
+            image: An optional image to attach (see generate()).
+
+        Yields:
+            A sequence of ("token", str) tuples followed by one
+            ("done" | "error", AgentResponse) tuple.
+        """
+        if not self.config.enabled:
+            yield "error", AgentResponse(agent=self.name, status=AgentStatus.DISABLED, error="disabled in config")
+            return
+        if not self.config.api_key:
+            yield "error", AgentResponse(
+                agent=self.name, status=AgentStatus.DISABLED, error=f"missing {self.config.api_key_env}"
+            )
+            return
+
+        start = time.perf_counter()
+        status = AgentStatus.ERROR
+        last_error: str | None = None
+        attempt = 0
+        accumulated = ""
+
+        async with httpx.AsyncClient(timeout=self.config.timeout_s) as client:
+            while attempt <= self.config.max_retries:
+                accumulated = ""
+                try:
+                    async with asyncio.timeout(self.config.timeout_s):
+                        async for chunk in self._call_api_stream(client, prompt, image):
+                            if not chunk:
+                                continue
+                            accumulated += chunk
+                            yield "token", chunk
+                    latency_ms = (time.perf_counter() - start) * 1000
+                    tokens = estimate_tokens(prompt) + estimate_tokens(accumulated)
+                    yield "done", AgentResponse(
+                        agent=self.name,
+                        status=AgentStatus.SUCCESS,
+                        response_text=accumulated,
+                        latency_ms=latency_ms,
+                        token_count_estimate=tokens,
+                        retries=attempt,
+                        model=self.config.model,
+                    )
+                    return
+                except TimeoutError:
+                    status, last_error = AgentStatus.TIMEOUT, f"timed out after {self.config.timeout_s}s"
+                except httpx.HTTPStatusError as e:
+                    if e.response.status_code == 429:
+                        status, last_error = AgentStatus.RATE_LIMITED, "rate limited (429)"
+                    else:
+                        status = AgentStatus.ERROR
+                        last_error = f"HTTP {e.response.status_code}: {e.response.text[:200]}"
+                except httpx.RequestError as e:
+                    status, last_error = AgentStatus.ERROR, f"network error: {e}"
+                except Exception as e:  # noqa: BLE001 - any adapter/parsing failure must not crash the pipeline
+                    status, last_error = AgentStatus.ERROR, f"{type(e).__name__}: {e}"
+
+                if accumulated:
+                    break  # partial output already streamed — finalize as a failure, don't retry
+
+                logger.debug("%s stream attempt %d failed: %s", self.name, attempt, last_error)
+                attempt += 1
+                if attempt <= self.config.max_retries:
+                    backoff = _BACKOFF_BASE_S * (2 ** (attempt - 1)) + random.uniform(0, 0.25)
+                    await asyncio.sleep(backoff)
+
+        latency_ms = (time.perf_counter() - start) * 1000
+        yield "error", AgentResponse(
+            agent=self.name,
+            status=status,
+            error=last_error,
+            response_text=accumulated or None,
+            latency_ms=latency_ms,
+            retries=attempt,
             model=self.config.model,
         )

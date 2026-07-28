@@ -71,6 +71,68 @@ async def dispatch_streaming(
         yield result
 
 
+async def dispatch_streaming_tokens(
+    agents: list[BaseAgent],
+    prompt_selector: Callable[[BaseAgent], tuple[str, ImageInput | None]],
+    on_token: Callable[[str, str], None] | None = None,
+    on_result: Callable[[AgentResponse], None] | None = None,
+) -> AsyncIterator[AgentResponse]:
+    """Dispatch prompt to every agent concurrently via token-by-token streaming.
+
+    Each agent's tokens are relayed live via `on_token` the instant they
+    arrive from `BaseAgent.generate_stream()`; every agent's finalized
+    AgentResponse is relayed via `on_result`/yielded once its stream ends
+    (success or failure), same contract as dispatch_streaming_mm. Multiple
+    agents' concurrent token streams are fanned into a single ordered-by-
+    arrival queue so one agent's tokens are never blocked waiting on another.
+
+    Args:
+        agents: The agents to dispatch to.
+        prompt_selector: Called once per agent to produce that agent's
+            (prompt_text, image_or_none) pair (see dispatch_streaming_mm).
+        on_token: Optional callback invoked with (agent_name, token_text)
+            for every text delta as it arrives.
+        on_result: Optional callback invoked synchronously with each
+            AgentResponse the moment its stream finishes.
+
+    Yields:
+        AgentResponse objects in completion order (fastest agent first).
+    """
+    if not agents:
+        return
+
+    queue: asyncio.Queue = asyncio.Queue()
+    _DONE = object()
+
+    async def run_agent(agent: BaseAgent) -> None:
+        text, image = prompt_selector(agent)
+        async for kind, payload in agent.generate_stream(text, image):
+            await queue.put((kind, agent.name, payload))
+
+    async def run_all() -> None:
+        await asyncio.gather(*(run_agent(a) for a in agents))
+        await queue.put(_DONE)
+
+    runner = asyncio.create_task(run_all())
+
+    while True:
+        item = await queue.get()
+        if item is _DONE:
+            break
+        kind, agent_name, payload = item
+        if kind == "token":
+            if on_token:
+                on_token(agent_name, payload)
+            continue
+        result: AgentResponse = payload
+        logger.info("%s finished: %s (%.0fms)", result.agent, result.status.value, result.latency_ms or 0)
+        if on_result:
+            on_result(result)
+        yield result
+
+    await runner
+
+
 async def dispatch_streaming_mm(
     agents: list[BaseAgent],
     prompt_selector: Callable[[BaseAgent], tuple[str, ImageInput | None]],

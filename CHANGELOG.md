@@ -4,6 +4,9 @@ All notable changes to this project are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+### Added
+- Token-by-token streaming for all 4 agents: each adapter now supports a streaming call mode alongside the existing whole-response mode, relayed live over a new `agent_token` SSE event (`{agent, token}`); toggle via `STREAMING_ENABLED` (default true). A mid-stream failure (timeout, rate limit, network error) finalizes with whatever text was already streamed rather than discarding it — validated against a real timeout, not just a mocked one.
+
 ### Changed
 - Removed the 7 unused agent adapters (Claude, OpenAI, DeepSeek, Together AI, Grok, Perplexity, HuggingFace) and every "11 agents" branding reference; the project now consistently describes itself as multi-agent, backed by the 4 active providers (Gemini, Groq, Cohere, Mistral)
 - Wired up native auto-deploy on both hosting platforms: Vercel was already git-connected but pointed at the repo root instead of `frontend/`; Render's GitHub App had never been installed on the account, so pushes silently never triggered a backend deploy
