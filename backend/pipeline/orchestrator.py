@@ -126,7 +126,9 @@ class Orchestrator:
         summary = summarize(responses)
 
         heuristic_scores = score_all_heuristic(working_query, responses)
-        evaluations, evaluator_used = await llm_judge_refine(working_query, responses, heuristic_scores, judge)
+        evaluations, evaluator_used, explanation = await llm_judge_refine(
+            working_query, responses, heuristic_scores, judge
+        )
         evaluations = rank(evaluations)
 
         synthesized_answer, attribution = await synthesize(
@@ -155,6 +157,7 @@ class Orchestrator:
             total_tokens_estimate=sum_tokens(responses),
             estimated_cost_usd=round(estimated_cost, 6),
             evaluator_used=evaluator_used,
+            explanation=explanation,
         )
 
         if use_cache:
@@ -394,7 +397,9 @@ class Orchestrator:
         summary = summarize(responses)
 
         heuristic_scores = score_all_heuristic(text_variant, responses)
-        evaluations, evaluator_used = await llm_judge_refine(text_variant, responses, heuristic_scores, judge)
+        evaluations, evaluator_used, explanation = await llm_judge_refine(
+            text_variant, responses, heuristic_scores, judge
+        )
         evaluations = rank(evaluations)
 
         synthesized_answer, attribution = await synthesize(
@@ -422,6 +427,7 @@ class Orchestrator:
             total_tokens_estimate=sum_tokens(responses),
             estimated_cost_usd=round(estimated_cost, 6),
             evaluator_used=evaluator_used,
+            explanation=explanation,
         )
 
         if effective_exact_cache or effective_semantic_cache:

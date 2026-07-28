@@ -8,7 +8,7 @@ Ask one question, get answers from every model at once — dispatched in paralle
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![Vite](https://img.shields.io/badge/vite-8-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-59%2F59%20passing-brightgreen)](backend/tests)
+[![Tests](https://img.shields.io/badge/tests-67%2F67%20passing-brightgreen)](backend/tests)
 
 > **🚀 Try the live demo: [frontend-five-jet-72.vercel.app](https://frontend-five-jet-72.vercel.app)** — no setup required. Backend runs on Render's free tier, so the first request after idle may take ~30-60s to cold-start.
 
@@ -47,6 +47,7 @@ It's built for the case where getting an answer wrong is worse than waiting thre
 - 🖼️ **Multimodal input** — attach an image (routed directly to vision-capable agents, described in text for the rest) or a document (PDF/DOCX/text extracted server-side and injected as context); dictate the prompt and have the answer read back, both via the browser's native Web Speech API
 - 💬 **Multi-turn conversation memory** — follow-up messages carry recent conversation history as context (trimmed from the oldest once it exceeds a token budget, both configurable), conversations are titled automatically from the first message, and the sidebar lets you rename/delete/search past conversations, not just single-shot queries
 - ⚡ **Semantic caching** — a paraphrased repeat question ("France's capital city?" after "What is the capital of France?") hits the cache too, not just an exact-text repeat, via cosine similarity over Cohere embeddings (configurable threshold); scoped per-conversation so two different conversations never cross-contaminate each other's cached answers
+- 💡 **Explainability panel** — an on-demand "Why this synthesis?" toggle on the synthesized answer showing the judge's own rationale (a 2-3 sentence summary plus concrete differentiators, e.g. "agent a included exact figures, agent b hedged its claim") for why certain responses were weighted more heavily; only appears when a judge actually ran and produced a well-formed explanation, never a fabricated placeholder
 - 🏆 **Agent leaderboard** — win rate, average score, and average latency per agent, persisted in SQLite and filterable by query type (factual/creative/analytical/coding/conversational)
 - 🛡️ **Graceful degradation** — missing API key, exhausted quota, network timeout, or malformed response: every failure mode is caught, labeled, and shown in the UI; the pipeline never hard-crashes on a bad agent
 - 🔌 **Plugin architecture** — a new provider is a new file: subclass `BaseAgent`, implement one method, add a config block. The registry auto-discovers it via `pkgutil`; nothing else in the codebase changes
@@ -271,7 +272,7 @@ multi_agent_orchestrator/
 - [x] **Token-by-token streaming** — stream each agent's response as it's generated rather than waiting for the full completion, using SSE deltas from providers that support it
 - [x] **Conversation memory** — multi-turn context carried across queries within a session, not just single-shot prompts
 - [x] **Semantic caching** — cache hits keyed on embedding similarity rather than exact prompt-hash match, so paraphrased repeat questions still hit the cache
-- [ ] **Agent explainability** — surface *why* the judge scored a response the way it did, beyond the current strengths/weaknesses one-liner
+- [x] **Agent explainability** — surface *why* the judge scored a response the way it did, beyond the current strengths/weaknesses one-liner
 
 ## Contributing
 

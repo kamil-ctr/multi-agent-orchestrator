@@ -1,7 +1,16 @@
 from __future__ import annotations
 
+import pytest
+
 from core.schemas import AgentResponse, AgentStatus
-from pipeline.evaluate import compute_confidence, heuristic_score, rank, score_all_heuristic
+from pipeline.evaluate import (
+    _extract_explanation,
+    compute_confidence,
+    heuristic_score,
+    llm_judge_refine,
+    rank,
+    score_all_heuristic,
+)
 from pipeline.normalize import summarize
 
 
@@ -81,3 +90,72 @@ def test_compute_confidence_higher_with_more_successes_and_agreement():
     conf_partial = compute_confidence(scores_partial, summarize(responses_partial))
 
     assert conf_ok >= conf_partial
+
+
+def test_extract_explanation_valid():
+    parsed = {"_explanation": {"summary": "Groq was more concise.", "key_differentiators": ["shorter", "on-topic"]}}
+    explanation = _extract_explanation(parsed)
+
+    assert explanation is not None
+    assert explanation.summary == "Groq was more concise."
+    assert explanation.key_differentiators == ["shorter", "on-topic"]
+
+
+def test_extract_explanation_missing_field_returns_none():
+    assert _extract_explanation({}) is None
+
+
+def test_extract_explanation_malformed_returns_none():
+    assert _extract_explanation({"_explanation": "not a dict"}) is None
+    assert _extract_explanation({"_explanation": {"summary": ""}}) is None
+    assert _extract_explanation({"_explanation": {"summary": "   "}}) is None
+
+
+def test_extract_explanation_filters_non_string_differentiators_and_caps_length():
+    parsed = {
+        "_explanation": {
+            "summary": "ok",
+            "key_differentiators": ["a", 123, None, "b", "c", "d", "e", "f", "g"],
+        }
+    }
+    explanation = _extract_explanation(parsed)
+
+    assert explanation.key_differentiators == ["a", "123", "b", "c", "d", "e"]  # None dropped, capped at 6
+
+
+@pytest.mark.asyncio
+async def test_llm_judge_refine_returns_none_explanation_without_judge():
+    scores = score_all_heuristic("q", [_resp("a", "answer one"), _resp("b", "answer two")])
+    responses = [_resp("a", "answer one"), _resp("b", "answer two")]
+
+    refined, evaluator_used, explanation = await llm_judge_refine("q", responses, scores, None)
+
+    assert evaluator_used == "heuristic"
+    assert explanation is None
+    assert refined == scores
+
+
+@pytest.mark.asyncio
+async def test_llm_judge_refine_extracts_explanation_from_judge_output(fake_agent_factory):
+    import json
+
+    judge_output = json.dumps(
+        {
+            "a": {"accuracy": 8, "depth": 7, "clarity": 8, "relevance": 8, "conciseness": 8, "strengths": "clear", "weaknesses": "none"},
+            "b": {"accuracy": 5, "depth": 5, "clarity": 5, "relevance": 5, "conciseness": 5, "strengths": "ok", "weaknesses": "vague"},
+            "_explanation": {
+                "summary": "Agent a was prioritized for its precise, verifiable claim.",
+                "key_differentiators": ["a cited a specific fact", "b was vague"],
+            },
+        }
+    )
+    judge = fake_agent_factory("judge", text=judge_output)
+    responses = [_resp("a", "answer one"), _resp("b", "answer two")]
+    heuristic_scores = score_all_heuristic("q", responses)
+
+    refined, evaluator_used, explanation = await llm_judge_refine("q", responses, heuristic_scores, judge)
+
+    assert evaluator_used == "llm:judge"
+    assert explanation is not None
+    assert "prioritized" in explanation.summary
+    assert len(explanation.key_differentiators) == 2

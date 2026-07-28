@@ -194,3 +194,52 @@ async def test_run_streaming_semantic_cache_noop_without_cohere_key(tmp_path, fa
 
     assert result.cache_hit == "miss"
     assert result.cache_similarity is None
+
+
+@pytest.mark.asyncio
+async def test_run_streaming_propagates_judge_explanation(tmp_path, fake_agent_factory):
+    import json
+
+    judge_output = json.dumps(
+        {
+            "a": {"accuracy": 9, "depth": 8, "clarity": 8, "relevance": 9, "conciseness": 8, "strengths": "precise", "weaknesses": "none"},
+            "b": {"accuracy": 4, "depth": 4, "clarity": 5, "relevance": 4, "conciseness": 5, "strengths": "ok", "weaknesses": "vague"},
+            "_explanation": {
+                "summary": "Agent a's answer was prioritized for its specificity.",
+                "key_differentiators": ["a included exact figures", "b hedged its claim"],
+            },
+        }
+    )
+    judge = fake_agent_factory("judge", text=judge_output)
+    b = fake_agent_factory("b", text="a vague answer")
+    config = AppConfig(agents={}, judge_agent="judge", data_dir=tmp_path, top_n_for_synthesis=1)
+    orch = Orchestrator(config)
+    orch.agents = [judge, b]
+    orch.agents_by_name = {"judge": judge, "b": b}
+
+    result = await orch.run_streaming("some question", use_cache=False)
+
+    assert result.evaluator_used == "llm:judge"
+    assert result.explanation is not None
+    assert "prioritized" in result.explanation.summary
+    assert len(result.explanation.key_differentiators) == 2
+
+    # Round-trips correctly through to_dict/from_dict (as persisted to cache/history/conversations).
+    from core.schemas import PipelineResult
+
+    roundtripped = PipelineResult.from_dict(result.to_dict())
+    assert roundtripped.explanation.summary == result.explanation.summary
+
+
+@pytest.mark.asyncio
+async def test_run_streaming_explanation_none_on_heuristic_fallback(tmp_path, fake_agent_factory):
+    config = AppConfig(agents={}, judge_agent="a", data_dir=tmp_path, top_n_for_synthesis=1)
+    orch = Orchestrator(config)
+    a = fake_agent_factory("a", text="only one agent, nothing to judge against")
+    orch.agents = [a]
+    orch.agents_by_name = {"a": a}
+
+    result = await orch.run_streaming("some question", use_cache=False)
+
+    assert result.evaluator_used == "heuristic"
+    assert result.explanation is None

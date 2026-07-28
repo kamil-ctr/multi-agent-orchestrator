@@ -15,7 +15,7 @@ import statistics
 
 from agents.base import BaseAgent
 from core.logger import get_logger
-from core.schemas import AgentResponse, AgentStatus, EvaluationScore
+from core.schemas import AgentResponse, AgentStatus, EvaluationScore, SynthesisExplanation
 from pipeline.normalize import CollectionSummary
 
 logger = get_logger(__name__)
@@ -199,8 +199,18 @@ Score EACH response on a 0-10 scale for these dimensions:
 
 Also give a one-line "strengths" and one-line "weaknesses" per response.
 
+Finally, explain your ranking: which response(s) you weighted most heavily
+and the SPECIFIC content that made them stronger or weaker than the others
+(a factual claim one got right/wrong, a detail one included that others
+missed, etc.) — concrete enough that someone could verify your reasoning
+against the responses themselves, not a restatement of the scores.
+
 Respond with ONLY a JSON object, no prose, no markdown fences, in this exact shape:
-{{"agent_name": {{"accuracy": 0, "depth": 0, "clarity": 0, "relevance": 0, "conciseness": 0, "strengths": "...", "weaknesses": "..."}}, ...}}
+{{
+  "agent_name": {{"accuracy": 0, "depth": 0, "clarity": 0, "relevance": 0, "conciseness": 0, "strengths": "...", "weaknesses": "..."}},
+  ...,
+  "_explanation": {{"summary": "2-3 sentences on why the ranking came out this way", "key_differentiators": ["specific concrete reason 1", "specific concrete reason 2"]}}
+}}
 """
 
 
@@ -222,12 +232,31 @@ def _extract_json(text: str) -> dict | None:
         return None
 
 
+def _extract_explanation(parsed: dict) -> SynthesisExplanation | None:
+    """Pull the judge's "_explanation" field out of its parsed JSON output.
+
+    Returns None (never a placeholder) if the field is missing or malformed
+    — an absent explanation is honest; a fabricated one isn't.
+    """
+    raw = parsed.get("_explanation")
+    if not isinstance(raw, dict):
+        return None
+    summary = raw.get("summary")
+    if not isinstance(summary, str) or not summary.strip():
+        return None
+    key_differentiators = raw.get("key_differentiators", [])
+    if not isinstance(key_differentiators, list):
+        key_differentiators = []
+    key_differentiators = [str(k)[:300] for k in key_differentiators if isinstance(k, (str, int, float))][:6]
+    return SynthesisExplanation(summary=summary.strip()[:1000], key_differentiators=key_differentiators)
+
+
 async def llm_judge_refine(
     query: str,
     responses: list[AgentResponse],
     heuristic_scores: list[EvaluationScore],
     judge: BaseAgent | None,
-) -> tuple[list[EvaluationScore], str]:
+) -> tuple[list[EvaluationScore], str, SynthesisExplanation | None]:
     """Ask a judge LLM to review and override the heuristic scores, if possible.
 
     Requires a configured, available judge agent AND at least 2 successful
@@ -247,24 +276,27 @@ async def llm_judge_refine(
             heuristic fallback.
 
     Returns:
-        A (scores, evaluator_used) tuple. evaluator_used is the literal
-        string "heuristic" on any fallback path, or f"llm:{judge.name}"
-        when the judge's refinement was actually used.
+        A (scores, evaluator_used, explanation) tuple. evaluator_used is
+        the literal string "heuristic" on any fallback path, or
+        f"llm:{judge.name}" when the judge's refinement was actually used.
+        explanation is None whenever evaluator_used == "heuristic", and
+        also None (not fabricated) if the judge ran but omitted or
+        malformed the "_explanation" field.
     """
     successful = [r for r in responses if r.status == AgentStatus.SUCCESS and r.response_text]
     if judge is None or not judge.is_available or len(successful) < 2:
-        return heuristic_scores, "heuristic"
+        return heuristic_scores, "heuristic", None
 
     prompt = _build_judge_prompt(query, successful)
     judge_response = await judge.generate(prompt)
     if judge_response.status != AgentStatus.SUCCESS or not judge_response.response_text:
         logger.info("Judge agent unavailable/failed, keeping heuristic scores")
-        return heuristic_scores, "heuristic"
+        return heuristic_scores, "heuristic", None
 
     parsed = _extract_json(judge_response.response_text)
     if not parsed:
         logger.info("Judge response was not valid JSON, keeping heuristic scores")
-        return heuristic_scores, "heuristic"
+        return heuristic_scores, "heuristic", None
 
     refined: list[EvaluationScore] = []
     heuristic_by_agent = {s.agent: s for s in heuristic_scores}
@@ -299,8 +331,8 @@ async def llm_judge_refine(
         )
 
     if not refined:
-        return heuristic_scores, "heuristic"
-    return refined, f"llm:{judge.name}"
+        return heuristic_scores, "heuristic", None
+    return refined, f"llm:{judge.name}", _extract_explanation(parsed)
 
 
 def compute_confidence(evaluations: list[EvaluationScore], summary: CollectionSummary) -> float:

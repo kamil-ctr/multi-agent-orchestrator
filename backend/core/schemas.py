@@ -78,6 +78,26 @@ class EvaluationScore:
 
 
 @dataclass
+class SynthesisExplanation:
+    """Why the judge prioritized certain agents' responses over others.
+
+    Populated only when an LLM judge actually ran and produced well-formed
+    output for this extra field — never a placeholder when unavailable,
+    since a fabricated "explanation" would be worse than none at all.
+    """
+
+    summary: str
+    key_differentiators: list[str] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, d: dict[str, Any]) -> "SynthesisExplanation":
+        return cls(**d)
+
+
+@dataclass
 class PipelineResult:
     query: str
     query_type: str
@@ -94,6 +114,7 @@ class PipelineResult:
     cache_hit: str = "miss"  # "exact" | "semantic" | "miss"
     cache_similarity: float | None = None
     evaluator_used: str = "heuristic"
+    explanation: SynthesisExplanation | None = None
     timestamp: float = field(default_factory=time.time)
 
     def to_dict(self) -> dict[str, Any]:
@@ -113,11 +134,13 @@ class PipelineResult:
             "cache_hit": self.cache_hit,
             "cache_similarity": self.cache_similarity,
             "evaluator_used": self.evaluator_used,
+            "explanation": self.explanation.to_dict() if self.explanation else None,
             "timestamp": self.timestamp,
         }
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> "PipelineResult":
+        explanation = d.get("explanation")
         return cls(
             query=d["query"],
             query_type=d["query_type"],
@@ -134,5 +157,6 @@ class PipelineResult:
             cache_hit=d.get("cache_hit", "miss"),
             cache_similarity=d.get("cache_similarity"),
             evaluator_used=d.get("evaluator_used", "heuristic"),
+            explanation=SynthesisExplanation.from_dict(explanation) if explanation else None,
             timestamp=d.get("timestamp", time.time()),
         )

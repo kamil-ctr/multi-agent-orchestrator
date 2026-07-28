@@ -4,6 +4,7 @@ import { Volume2, VolumeX, Download, Zap } from "lucide-react";
 import ConfidenceGauge from "./ConfidenceGauge";
 import ComparisonTable from "./ComparisonTable";
 import AgentResponseCard from "./AgentResponseCard";
+import ExplainabilityPanel from "./ExplainabilityPanel";
 import { agentColor, agentLabel } from "../api/agentMeta";
 import { useTextToSpeech } from "../hooks/useVoice";
 import { exportUrl } from "../api/client";
@@ -144,6 +145,8 @@ export default function ResultsPanel({ result, historyId }) {
             </a>
           )}
         </div>
+
+        <ExplainabilityPanel explanation={result.explanation} />
       </div>
 
       <div>
