@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project doesn't yet follow strict semantic versioning tags beyond marking the initial release.
 
+## [Unreleased]
+
+### Changed
+- Removed the 7 unused agent adapters (Claude, OpenAI, DeepSeek, Together AI, Grok, Perplexity, HuggingFace) and every "11 agents" branding reference; the project now consistently describes itself as multi-agent, backed by the 4 active providers (Gemini, Groq, Cohere, Mistral)
+- Wired up native auto-deploy on both hosting platforms: Vercel was already git-connected but pointed at the repo root instead of `frontend/`; Render's GitHub App had never been installed on the account, so pushes silently never triggered a backend deploy
+
 ## [1.0.0] — 2026-07-28
 
 Initial release: a full-stack multi-agent LLM orchestration platform, evolved from a single-model CLI prototype through a complete pipeline redesign, a web migration, and live-testing-driven hardening.
