@@ -2,7 +2,7 @@
 
 Ask one question, get answers from every model at once — dispatched in parallel, scored on five dimensions, and synthesized into a single answer with full attribution.
 
-[![Live Demo](https://img.shields.io/badge/demo-not%20yet%20deployed-lightgrey)](#)
+[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://frontend-five-jet-72.vercel.app)
 [![Python](https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![React](https://img.shields.io/badge/react-19-61DAFB?logo=react&logoColor=white)](https://react.dev/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
@@ -10,7 +10,7 @@ Ask one question, get answers from every model at once — dispatched in paralle
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/tests-24%2F24%20passing-brightgreen)](backend/tests)
 
-> The live demo badge above is a placeholder — swap it for a real deployment badge/link once hosted (see [Roadmap](#roadmap)).
+> **🚀 Try the live demo: [frontend-five-jet-72.vercel.app](https://frontend-five-jet-72.vercel.app)** — no setup required. Backend runs on Render's free tier, so the first request after idle may take ~30-60s to cold-start.
 
 ![Hero screenshot](docs/screenshots/hero.png)
 *See [docs/SCREENSHOTS.md](docs/SCREENSHOTS.md) for exactly how this and the screenshots below were captured.*
@@ -105,6 +105,8 @@ Capture instructions for all three images are in [docs/SCREENSHOTS.md](docs/SCRE
 | Package/runtime | Python 3.11+, Node 18+ | Modern async syntax (`async with`, structural pattern matching) and current LTS Node |
 
 ## Getting Started
+
+**Just want to try it?** Skip local setup entirely — the live demo above is a full deployment (Vercel frontend + Render backend) with all four agents (Gemini, Groq, Cohere, Mistral) configured.
 
 ### Prerequisites
 
