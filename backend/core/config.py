@@ -85,7 +85,13 @@ def load_config(config_path: str | Path | None = None) -> AppConfig:
             vision_model=spec.get("vision_model"),
         )
 
-    data_dir = PROJECT_ROOT / raw.get("data_dir", "data")
+    # DATA_DIR overrides config.yaml's data_dir — needed on platforms whose
+    # free tier has no persistent disk (e.g. Render), where it's pointed at
+    # /tmp: writable, but wiped on every restart/redeploy, so history and
+    # cache don't survive across deploys there. Set DATA_DIR to a mounted
+    # persistent-disk path on any platform that offers one.
+    env_data_dir = os.getenv("DATA_DIR")
+    data_dir = Path(env_data_dir) if env_data_dir else PROJECT_ROOT / raw.get("data_dir", "data")
     data_dir.mkdir(parents=True, exist_ok=True)
 
     return AppConfig(
