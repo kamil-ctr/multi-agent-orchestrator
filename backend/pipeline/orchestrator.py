@@ -10,6 +10,7 @@ from agents.base import BaseAgent
 from agents.registry import build_agents
 from core.cache import ResponseCache
 from core.config import AppConfig
+from core.conversations import ConversationStore
 from core.cost_tracker import estimate_cost_usd, estimate_tokens
 from core.cost_tracker import total_tokens as sum_tokens
 from core.history import HistoryStore
@@ -43,6 +44,7 @@ class Orchestrator:
         self.agents_by_name: dict[str, BaseAgent] = {a.name: a for a in self.agents}
         self.cache = ResponseCache(config.data_dir / "cache.sqlite", config.cache_ttl_seconds)
         self.history = HistoryStore(config.data_dir / "history.sqlite")
+        self.conversations = ConversationStore(config.data_dir / "conversations.sqlite")
 
     def judge_agent(self) -> BaseAgent | None:
         """Return the configured judge/synthesizer agent, if it's in the roster.
@@ -180,6 +182,7 @@ class Orchestrator:
         prompt: str,
         image: ImageInput | None = None,
         file_context: str | None = None,
+        conversation_context: str | None = None,
         use_cache: bool = True,
         record_history: bool = True,
         enabled_agents: list[str] | None = None,
@@ -198,9 +201,16 @@ class Orchestrator:
                 `_describe_image`) and substituted in for everyone else.
             file_context: Optional extracted text from an attached document,
                 prepended to the prompt as context for every agent.
+            conversation_context: Optional prior-turns context (see
+                ConversationStore.build_context), prepended alongside
+                file_context for follow-up messages in a multi-turn
+                conversation.
             use_cache: Whether to check/populate the prompt-hash cache.
-                Automatically disabled whenever image or file_context is
-                present, since the cache key is prompt-text-only.
+                Automatically disabled whenever image, file_context, or
+                conversation_context is present, since the cache key is
+                prompt-text-only and none of those are safe to conflate
+                with a different image/file/conversation under the same
+                caption.
             record_history: Whether to persist this run to the history store.
             enabled_agents: When given, restricts dispatch to this subset of
                 configured agent names (from the Settings page's on/off
@@ -226,9 +236,11 @@ class Orchestrator:
         if not agents:
             raise ValueError("no agents selected")
 
-        # Cache is keyed on prompt text only, so any attachment bypasses it —
-        # otherwise a second image under the same caption would return stale results.
-        effective_use_cache = use_cache and image is None and not file_context
+        # Cache is keyed on prompt text only, so any attachment or prior
+        # conversation turn bypasses it — otherwise a repeat prompt in a
+        # different context (image, file, or conversation) would return a
+        # stale, context-blind cached result.
+        effective_use_cache = use_cache and image is None and not file_context and not conversation_context
         if effective_use_cache:
             cached = self.cache.get(prompt)
             if cached:
@@ -237,9 +249,15 @@ class Orchestrator:
                     on_event({"type": "synthesis_done", "result": cached.to_dict(), "history_id": None})
                 return cached
 
-        working_query = prompt
+        context_blocks = []
+        if conversation_context:
+            context_blocks.append(f"Conversation so far:\n{conversation_context}")
         if file_context:
-            working_query = f"Attached file content:\n{file_context}\n\n---\n\nUser question: {prompt}"
+            context_blocks.append(f"Attached file content:\n{file_context}")
+
+        working_query = prompt
+        if context_blocks:
+            working_query = "\n\n---\n\n".join(context_blocks) + f"\n\n---\n\nUser question: {prompt}"
 
         query_type = classify_query_type(prompt)
         judge = self.judge_agent()

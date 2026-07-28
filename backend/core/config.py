@@ -53,6 +53,8 @@ class AppConfig:
     data_dir: Path = PROJECT_ROOT / "data"
     top_n_for_synthesis: int = 3
     streaming_enabled: bool = True
+    conversation_context_messages: int = 10
+    conversation_context_max_tokens: int = 3000
     raw: dict[str, Any] = field(default_factory=dict)
 
 
@@ -96,6 +98,8 @@ def load_config(config_path: str | Path | None = None) -> AppConfig:
     data_dir.mkdir(parents=True, exist_ok=True)
 
     streaming_enabled = os.getenv("STREAMING_ENABLED", "true").strip().lower() not in ("false", "0", "no")
+    conversation_context_messages = int(os.getenv("CONVERSATION_CONTEXT_MESSAGES", "10"))
+    conversation_context_max_tokens = int(os.getenv("CONVERSATION_CONTEXT_MAX_TOKENS", "3000"))
 
     return AppConfig(
         agents=agents,
@@ -107,5 +111,7 @@ def load_config(config_path: str | Path | None = None) -> AppConfig:
         data_dir=data_dir,
         top_n_for_synthesis=int(raw.get("top_n_for_synthesis", 3)),
         streaming_enabled=streaming_enabled,
+        conversation_context_messages=conversation_context_messages,
+        conversation_context_max_tokens=conversation_context_max_tokens,
         raw=raw,
     )

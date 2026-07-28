@@ -3,8 +3,15 @@ import { motion } from "framer-motion";
 import { Sparkles } from "lucide-react";
 import ChatInput from "../components/ChatInput";
 import ChatMessage from "../components/ChatMessage";
-import HistorySidebar from "../components/HistorySidebar";
-import { createQuery, fetchAgents, fetchHistoryItem, streamQuery, AGENT_ORDER } from "../api/client";
+import ConversationSidebar from "../components/ConversationSidebar";
+import {
+  createConversation,
+  fetchAgents,
+  fetchConversation,
+  sendMessage,
+  streamQuery,
+  AGENT_ORDER,
+} from "../api/client";
 import { useSettings } from "../context/SettingsContext";
 
 function newTurnId() {
@@ -15,14 +22,54 @@ function seedAgentStates(agentNames) {
   return Object.fromEntries(agentNames.map((n) => [n, { status: "waiting" }]));
 }
 
+function messagesToTurns(messages) {
+  const turns = [];
+  for (let i = 0; i < messages.length; i++) {
+    const m = messages[i];
+    if (m.role !== "user") continue;
+    const next = messages[i + 1];
+    if (next && next.role === "assistant") {
+      turns.push({
+        id: `m_${m.id}`,
+        prompt: m.content,
+        attachment: null,
+        status: "done",
+        agentStates: {},
+        result: next.agent_responses,
+        historyId: null,
+        error: null,
+      });
+      i++;
+    } else {
+      turns.push({
+        id: `m_${m.id}`,
+        prompt: m.content,
+        attachment: null,
+        status: "error",
+        agentStates: {},
+        result: null,
+        historyId: null,
+        error: "This message didn't receive a response.",
+      });
+    }
+  }
+  return turns;
+}
+
 export default function ChatPage() {
   const [turns, setTurns] = useState([]);
+  const [activeConversationId, setActiveConversationId] = useState(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
+  const [sidebarRefreshKey, setSidebarRefreshKey] = useState(0);
   const [availableAgents, setAvailableAgents] = useState(AGENT_ORDER);
   const { settings } = useSettings();
   const scrollRef = useRef(null);
   const closeStreamRef = useRef(null);
+  const activeConversationIdRef = useRef(null);
+
+  useEffect(() => {
+    activeConversationIdRef.current = activeConversationId;
+  }, [activeConversationId]);
 
   useEffect(() => {
     fetchAgents()
@@ -38,6 +85,23 @@ export default function ChatPage() {
 
   const updateTurn = useCallback((id, patch) => {
     setTurns((prev) => prev.map((t) => (t.id === id ? { ...t, ...(typeof patch === "function" ? patch(t) : patch) } : t)));
+  }, []);
+
+  const handleNewChat = useCallback(() => {
+    closeStreamRef.current?.();
+    setTurns([]);
+    setActiveConversationId(null);
+  }, []);
+
+  const handleSelectConversation = useCallback(async (conversationId) => {
+    try {
+      const conv = await fetchConversation(conversationId);
+      closeStreamRef.current?.();
+      setActiveConversationId(conversationId);
+      setTurns(messagesToTurns(conv.messages));
+    } catch {
+      // conversation may have been deleted elsewhere — ignore
+    }
   }, []);
 
   const handleSubmit = useCallback(
@@ -72,7 +136,16 @@ export default function ChatPage() {
       }
 
       try {
-        const queryId = await createQuery(payload);
+        let conversationId = activeConversationIdRef.current;
+        if (conversationId == null) {
+          const conv = await createConversation();
+          conversationId = conv.id;
+          activeConversationIdRef.current = conversationId;
+          setActiveConversationId(conversationId);
+          setSidebarRefreshKey((k) => k + 1);
+        }
+
+        const queryId = await sendMessage(conversationId, payload);
         closeStreamRef.current = streamQuery(
           queryId,
           (evt) => {
@@ -117,7 +190,11 @@ export default function ChatPage() {
               }));
             } else if (evt.type === "synthesis_done") {
               updateTurn(id, { status: "done", result: evt.result, historyId: evt.history_id });
-              setHistoryRefreshKey((k) => k + 1);
+              setSidebarRefreshKey((k) => k + 1);
+              // A first-turn title is generated asynchronously server-side
+              // after the reply — refresh once more so it shows up without
+              // requiring a manual reload.
+              setTimeout(() => setSidebarRefreshKey((k) => k + 1), 3000);
             } else if (evt.type === "fatal_error") {
               updateTurn(id, { status: "error", error: evt.error });
             }
@@ -131,28 +208,17 @@ export default function ChatPage() {
     [availableAgents, settings.disabledAgents, updateTurn]
   );
 
-  const handleSelectHistory = useCallback(async (historyId) => {
-    try {
-      const result = await fetchHistoryItem(historyId);
-      const id = newTurnId();
-      setTurns((prev) => [
-        ...prev,
-        { id, prompt: result.query, attachment: null, status: "done", agentStates: {}, result, historyId },
-      ]);
-    } catch {
-      // ignore — history item may have been pruned
-    }
-  }, []);
-
   const isBusy = turns.some((t) => t.status === "running");
 
   return (
     <div className="flex h-full min-h-0">
-      <HistorySidebar
+      <ConversationSidebar
         collapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed((c) => !c)}
-        onSelect={handleSelectHistory}
-        refreshKey={historyRefreshKey}
+        activeId={activeConversationId}
+        onSelect={handleSelectConversation}
+        onNewChat={handleNewChat}
+        refreshKey={sidebarRefreshKey}
       />
 
       <div className="flex min-w-0 flex-1 flex-col">

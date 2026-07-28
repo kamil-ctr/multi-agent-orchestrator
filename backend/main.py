@@ -12,6 +12,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from api import agents as agents_api
+from api import conversations as conversations_api
 from api import export as export_api
 from api import history as history_api
 from api import leaderboard as leaderboard_api
@@ -43,6 +44,7 @@ app.add_middleware(
 app.state.orchestrator = Orchestrator(config)
 
 app.include_router(query_api.router, prefix="/api")
+app.include_router(conversations_api.router, prefix="/api")
 app.include_router(upload_api.router, prefix="/api")
 app.include_router(history_api.router, prefix="/api")
 app.include_router(leaderboard_api.router, prefix="/api")

@@ -6,44 +6,31 @@ Events are stored in an in-memory, append-only list per job rather than
 handed out through a single-consumer queue, so a client that connects late
 (or reconnects) always gets the full event history replayed from the start —
 important since EventSource auto-reconnects on any hiccup.
+
+Kept as a backwards-compatible shortcut: under the hood it now creates a
+single-message conversation (see api/conversations.py) so a legacy caller's
+query still shows up in the conversation-centric UI. New clients should
+prefer POST /api/conversations/{id}/messages directly.
 """
 from __future__ import annotations
 
 import asyncio
 import json
-import time
 import uuid
-from collections import OrderedDict
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
+from api.conversations import generate_title
+from core.jobs import JOBS, QueryJob, register_job
 from core.logger import get_logger
 from core.schemas import ImageInput
 
 logger = get_logger(__name__)
 router = APIRouter()
 
-_MAX_JOBS = 200
 _POLL_INTERVAL_S = 0.05
-
-
-class QueryJob:
-    def __init__(self, query_id: str) -> None:
-        self.query_id = query_id
-        self.events: list[dict] = []
-        self.done = False
-        self.created_at = time.time()
-
-
-JOBS: "OrderedDict[str, QueryJob]" = OrderedDict()
-
-
-def _register_job(job: QueryJob) -> None:
-    JOBS[job.query_id] = job
-    while len(JOBS) > _MAX_JOBS:
-        JOBS.popitem(last=False)
 
 
 class QueryRequest(BaseModel):
@@ -58,6 +45,7 @@ class QueryRequest(BaseModel):
 
 class QueryAck(BaseModel):
     query_id: str
+    conversation_id: int | None = None
 
 
 @router.post("/query", response_model=QueryAck)
@@ -71,7 +59,11 @@ async def create_query(req: QueryRequest, request: Request) -> QueryAck:
 
     query_id = uuid.uuid4().hex
     job = QueryJob(query_id)
-    _register_job(job)
+    register_job(job)
+
+    conv_store = orch.conversations
+    conversation_id = conv_store.create()
+    conv_store.add_message(conversation_id, role="user", content=req.prompt)
 
     image = None
     if req.image_base64 and req.image_mime:
@@ -82,7 +74,7 @@ async def create_query(req: QueryRequest, request: Request) -> QueryAck:
             job.events.append(evt)
 
         try:
-            await orch.run_streaming(
+            result = await orch.run_streaming(
                 req.prompt,
                 image=image,
                 file_context=req.file_context,
@@ -90,6 +82,13 @@ async def create_query(req: QueryRequest, request: Request) -> QueryAck:
                 enabled_agents=req.enabled_agents,
                 on_event=on_event,
             )
+            conv_store.add_message(
+                conversation_id,
+                role="assistant",
+                content=result.synthesized_answer,
+                agent_responses_json=json.dumps(result.to_dict()),
+            )
+            asyncio.create_task(generate_title(orch, conv_store, conversation_id, req.prompt))
         except Exception as e:  # noqa: BLE001 — must reach the client as an event, never crash the server
             logger.exception("query %s failed", query_id)
             job.events.append({"type": "fatal_error", "error": str(e)})
@@ -97,7 +96,7 @@ async def create_query(req: QueryRequest, request: Request) -> QueryAck:
             job.done = True
 
     asyncio.create_task(run_job())
-    return QueryAck(query_id=query_id)
+    return QueryAck(query_id=query_id, conversation_id=conversation_id)
 
 
 def _sse_format(event: dict) -> str:

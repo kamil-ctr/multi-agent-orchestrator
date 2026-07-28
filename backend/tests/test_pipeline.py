@@ -136,3 +136,25 @@ async def test_orchestrator_run_streaming_with_file_context(tmp_path, fake_agent
 
     assert result.query == "Summarize this"
     assert result.synthesized_answer
+
+
+@pytest.mark.asyncio
+async def test_run_streaming_prepends_conversation_context_to_agent_prompt(tmp_path, fake_agent_factory):
+    config = AppConfig(
+        agents={}, judge_agent="a", data_dir=tmp_path, top_n_for_synthesis=1, streaming_enabled=False
+    )
+    orch = Orchestrator(config)
+    a = fake_agent_factory("a", echo=True)
+    orch.agents = [a]
+    orch.agents_by_name = {"a": a}
+
+    result = await orch.run_streaming(
+        "What about tomorrow?",
+        conversation_context="User: What's the weather today?\nAssistant: It's sunny.",
+        use_cache=False,
+    )
+
+    agent_prompt = result.agent_responses[0].response_text
+    assert "What's the weather today?" in agent_prompt
+    assert "It's sunny." in agent_prompt
+    assert "What about tomorrow?" in agent_prompt

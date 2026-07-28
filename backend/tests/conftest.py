@@ -26,6 +26,7 @@ class FakeAgent(BaseAgent):
         should_fail: bool = False,
         hang: bool = False,
         fail_after_tokens: int | None = None,
+        echo: bool = False,
     ):
         cfg = AgentConfig(
             name=name,
@@ -41,6 +42,7 @@ class FakeAgent(BaseAgent):
         self._should_fail = should_fail
         self._hang = hang
         self._fail_after_tokens = fail_after_tokens
+        self._echo = echo
 
     async def _call_api(self, client: httpx.AsyncClient, prompt: str, image=None) -> str:
         import asyncio
@@ -49,7 +51,7 @@ class FakeAgent(BaseAgent):
             await asyncio.sleep(10)
         if self._should_fail:
             raise RuntimeError("simulated failure")
-        return self._text
+        return prompt if self._echo else self._text
 
     async def _call_api_stream(self, client: httpx.AsyncClient, prompt: str, image=None):
         import asyncio
@@ -73,8 +75,11 @@ def fake_agent_factory():
         should_fail: bool = False,
         hang: bool = False,
         fail_after_tokens: int | None = None,
+        echo: bool = False,
     ):
-        agent = FakeAgent(name, text=text, should_fail=should_fail, hang=hang, fail_after_tokens=fail_after_tokens)
+        agent = FakeAgent(
+            name, text=text, should_fail=should_fail, hang=hang, fail_after_tokens=fail_after_tokens, echo=echo
+        )
         return agent
 
     return _make

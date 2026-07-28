@@ -6,6 +6,7 @@ All notable changes to this project are documented here. Format follows [Keep a 
 
 ### Added
 - Token-by-token streaming for all 4 agents: each adapter now supports a streaming call mode alongside the existing whole-response mode, relayed live over a new `agent_token` SSE event (`{agent, token}`); toggle via `STREAMING_ENABLED` (default true). A mid-stream failure (timeout, rate limit, network error) finalizes with whatever text was already streamed rather than discarding it — validated against a real timeout, not just a mocked one.
+- Multi-turn conversation memory: new `conversations`/`messages` SQLite tables and `/api/conversations` endpoints (create, list, get, rename, delete, send message). Follow-up messages pass recent conversation history as context to every agent (capped at `CONVERSATION_CONTEXT_MESSAGES`, trimmed from the oldest once over `CONVERSATION_CONTEXT_MAX_TOKENS`); a conversation's title is generated asynchronously from its first message so the reply isn't blocked on it. The legacy `/api/query` endpoint still works, now creating a single-message conversation under the hood for backward compatibility. The Chat page's sidebar now lists conversations (rename/delete via right-click, client-side search) instead of individual query history.
 
 ### Changed
 - Removed the 7 unused agent adapters (Claude, OpenAI, DeepSeek, Together AI, Grok, Perplexity, HuggingFace) and every "11 agents" branding reference; the project now consistently describes itself as multi-agent, backed by the 4 active providers (Gemini, Groq, Cohere, Mistral)

@@ -68,14 +68,35 @@ export function streamQuery(queryId, onEvent, onError) {
   return () => es.close();
 }
 
-export async function fetchHistory({ page = 1, pageSize = 20, search = "" } = {}) {
-  const { data } = await http.get("/history", { params: { page, page_size: pageSize, search: search || undefined } });
+export async function createConversation(title) {
+  const { data } = await http.post("/conversations", title ? { title } : {});
   return data;
 }
 
-export async function fetchHistoryItem(id) {
-  const { data } = await http.get(`/history/${id}`);
+export async function fetchConversations({ page = 1, pageSize = 30, search = "" } = {}) {
+  const { data } = await http.get("/conversations", {
+    params: { page, page_size: pageSize, search: search || undefined },
+  });
   return data;
+}
+
+export async function fetchConversation(id) {
+  const { data } = await http.get(`/conversations/${id}`);
+  return data;
+}
+
+export async function sendMessage(conversationId, payload) {
+  const { data } = await http.post(`/conversations/${conversationId}/messages`, payload);
+  return data.query_id;
+}
+
+export async function renameConversation(id, title) {
+  const { data } = await http.patch(`/conversations/${id}`, { title });
+  return data;
+}
+
+export async function deleteConversation(id) {
+  await http.delete(`/conversations/${id}`);
 }
 
 export async function fetchLeaderboard(queryType) {
