@@ -6,6 +6,8 @@ const DEFAULT_SETTINGS = {
   disabledAgents: [], // agent names the user has manually turned off
   voiceAutoplay: false, // auto-speak the synthesized answer when it lands
   voiceRate: 1,
+  semanticCacheEnabled: true, // cache hits on paraphrased repeat questions, not just exact-text repeats
+  semanticCacheThreshold: 0.92, // cosine similarity required for a semantic cache hit
 };
 
 function loadSettings() {

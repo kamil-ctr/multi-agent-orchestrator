@@ -126,6 +126,8 @@ export default function ChatPage() {
         prompt: text || "Describe what you see.",
         use_cache: true,
         enabled_agents: enabledAgents,
+        semantic_cache_enabled: settings.semanticCacheEnabled,
+        semantic_cache_threshold: settings.semanticCacheThreshold,
       };
       if (attachment?.kind === "image") {
         payload.image_base64 = attachment.data_base64;
@@ -205,7 +207,7 @@ export default function ChatPage() {
         updateTurn(id, { status: "error", error: err.response?.data?.detail || "Failed to submit query" });
       }
     },
-    [availableAgents, settings.disabledAgents, updateTurn]
+    [availableAgents, settings.disabledAgents, settings.semanticCacheEnabled, settings.semanticCacheThreshold, updateTurn]
   );
 
   const isBusy = turns.some((t) => t.status === "running");

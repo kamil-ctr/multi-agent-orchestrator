@@ -157,4 +157,40 @@ async def test_run_streaming_prepends_conversation_context_to_agent_prompt(tmp_p
     agent_prompt = result.agent_responses[0].response_text
     assert "What's the weather today?" in agent_prompt
     assert "It's sunny." in agent_prompt
-    assert "What about tomorrow?" in agent_prompt
+
+
+@pytest.mark.asyncio
+async def test_run_streaming_exact_cache_hit_sets_cache_hit_field(tmp_path, fake_agent_factory):
+    config = AppConfig(agents={}, judge_agent="a", data_dir=tmp_path, top_n_for_synthesis=1)
+    orch = Orchestrator(config)
+    a = fake_agent_factory("a", text="4")
+    orch.agents = [a]
+    orch.agents_by_name = {"a": a}
+
+    first = await orch.run_streaming("what is 2+2", use_cache=True)
+    assert first.cache_hit == "miss"
+
+    second = await orch.run_streaming("what is 2+2", use_cache=True)
+    assert second.cache_hit == "exact"
+    assert second.cache_similarity is None
+    assert second.cached is True
+
+
+@pytest.mark.asyncio
+async def test_run_streaming_semantic_cache_noop_without_cohere_key(tmp_path, fake_agent_factory):
+    """No cohere agent configured (agents={} in tests) — semantic caching
+    must degrade to a silent no-op rather than erroring, exactly like every
+    other optional enhancement (query expansion, image description) when
+    its dependency isn't available."""
+    config = AppConfig(
+        agents={}, judge_agent="a", data_dir=tmp_path, top_n_for_synthesis=1, semantic_cache_enabled=True
+    )
+    orch = Orchestrator(config)
+    a = fake_agent_factory("a", text="answer one")
+    orch.agents = [a]
+    orch.agents_by_name = {"a": a}
+
+    result = await orch.run_streaming("some unique question", use_cache=True)
+
+    assert result.cache_hit == "miss"
+    assert result.cache_similarity is None

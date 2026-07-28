@@ -6,6 +6,8 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
+import httpx
+
 from agents.base import BaseAgent
 from agents.registry import build_agents
 from core.cache import ResponseCache
@@ -13,6 +15,7 @@ from core.config import AppConfig
 from core.conversations import ConversationStore
 from core.cost_tracker import estimate_cost_usd, estimate_tokens
 from core.cost_tracker import total_tokens as sum_tokens
+from core.embeddings import embed_text
 from core.history import HistoryStore
 from core.logger import get_logger
 from core.schemas import AgentResponse, AgentStatus, ImageInput, PipelineResult
@@ -63,6 +66,18 @@ class Orchestrator:
         show which agents have a working key without exposing the key itself.
         """
         return {a.name: a.is_available for a in self.agents}
+
+    async def _embed(self, text: str) -> list[float] | None:
+        """Embed text for semantic cache comparison via Cohere (see core/embeddings.py).
+
+        Returns None if no Cohere key is configured or the call fails —
+        semantic caching then simply doesn't apply for this run.
+        """
+        cohere_cfg = self.config.agents.get("cohere")
+        if cohere_cfg is None or not cohere_cfg.api_key:
+            return None
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            return await embed_text(client, text, cohere_cfg.api_key)
 
     async def run(
         self,
@@ -183,9 +198,12 @@ class Orchestrator:
         image: ImageInput | None = None,
         file_context: str | None = None,
         conversation_context: str | None = None,
+        conversation_id: int | None = None,
         use_cache: bool = True,
         record_history: bool = True,
         enabled_agents: list[str] | None = None,
+        semantic_cache_enabled: bool | None = None,
+        semantic_cache_threshold: float | None = None,
         on_event: Callable[[dict], None] | None = None,
     ) -> PipelineResult:
         """Run the full pipeline with multimodal support and live lifecycle events (API entrypoint).
@@ -205,17 +223,28 @@ class Orchestrator:
                 ConversationStore.build_context), prepended alongside
                 file_context for follow-up messages in a multi-turn
                 conversation.
-            use_cache: Whether to check/populate the prompt-hash cache.
-                Automatically disabled whenever image, file_context, or
-                conversation_context is present, since the cache key is
-                prompt-text-only and none of those are safe to conflate
-                with a different image/file/conversation under the same
-                caption.
+            conversation_id: The conversation this turn belongs to, if any —
+                used only to scope semantic-cache lookups/writes to that
+                conversation (never leaks across unrelated conversations).
+                Exact prompt-hash caching remains conversation-blind and is
+                skipped whenever conversation_context is present, since two
+                identical questions can have different correct answers
+                depending on what came before them.
+            use_cache: Whether to check/populate the cache (exact and/or
+                semantic). Exact matching is automatically disabled whenever
+                image, file_context, or conversation_context is present.
+                Semantic matching is disabled whenever image or file_context
+                is present, but — unlike exact matching — remains active for
+                conversation turns, scoped to conversation_id.
             record_history: Whether to persist this run to the history store.
             enabled_agents: When given, restricts dispatch to this subset of
                 configured agent names (from the Settings page's on/off
                 toggles) — None means "use every configured agent," matching
                 the CLI's default.
+            semantic_cache_enabled: Per-request override for
+                config.semantic_cache_enabled (None uses the config default).
+            semantic_cache_threshold: Per-request override for
+                config.semantic_cache_threshold (None uses the config default).
             on_event: Optional callback invoked with a dict for each
                 lifecycle event (`agent_start`, `agent_done`, `agent_error`,
                 `synthesis_done`) — the API layer uses this to push events
@@ -236,18 +265,48 @@ class Orchestrator:
         if not agents:
             raise ValueError("no agents selected")
 
-        # Cache is keyed on prompt text only, so any attachment or prior
-        # conversation turn bypasses it — otherwise a repeat prompt in a
-        # different context (image, file, or conversation) would return a
-        # stale, context-blind cached result.
-        effective_use_cache = use_cache and image is None and not file_context and not conversation_context
-        if effective_use_cache:
+        # Exact-hash matching is keyed on prompt text only and stays
+        # conversation-blind, so it's skipped whenever there's an
+        # attachment or prior conversation turn — a repeat prompt in a
+        # different context could otherwise return a stale, context-blind
+        # result. Semantic matching additionally requires an embedding
+        # call, so it's skipped for attachments too, but (scoped by
+        # conversation_id) remains available for conversation turns.
+        effective_exact_cache = use_cache and image is None and not file_context and not conversation_context
+        semantic_enabled = (
+            self.config.semantic_cache_enabled if semantic_cache_enabled is None else semantic_cache_enabled
+        )
+        semantic_threshold = (
+            self.config.semantic_cache_threshold if semantic_cache_threshold is None else semantic_cache_threshold
+        )
+        effective_semantic_cache = use_cache and image is None and not file_context and semantic_enabled
+
+        cached: PipelineResult | None = None
+        cache_hit = "miss"
+        cache_similarity: float | None = None
+        query_embedding: list[float] | None = None
+
+        if effective_exact_cache:
             cached = self.cache.get(prompt)
             if cached:
-                logger.info("Cache hit for prompt")
-                if on_event:
-                    on_event({"type": "synthesis_done", "result": cached.to_dict(), "history_id": None})
-                return cached
+                cache_hit = "exact"
+
+        if cached is None and effective_semantic_cache:
+            query_embedding = await self._embed(prompt)
+            if query_embedding:
+                cached, cache_similarity = self.cache.get_semantic(
+                    query_embedding, semantic_threshold, conversation_id=conversation_id
+                )
+                if cached:
+                    cache_hit = "semantic"
+
+        if cached:
+            cached.cache_hit = cache_hit
+            cached.cache_similarity = cache_similarity
+            logger.info("Cache hit for prompt (%s, similarity=%s)", cache_hit, cache_similarity)
+            if on_event:
+                on_event({"type": "synthesis_done", "result": cached.to_dict(), "history_id": None})
+            return cached
 
         context_blocks = []
         if conversation_context:
@@ -365,8 +424,10 @@ class Orchestrator:
             evaluator_used=evaluator_used,
         )
 
-        if effective_use_cache:
-            self.cache.set(prompt, result)
+        if effective_exact_cache or effective_semantic_cache:
+            write_embedding = query_embedding if effective_semantic_cache else None
+            write_conversation_id = conversation_id if conversation_context else None
+            self.cache.set(prompt, result, embedding=write_embedding, conversation_id=write_conversation_id)
         history_id: int | None = None
         if record_history:
             history_id = self.history.record(result)

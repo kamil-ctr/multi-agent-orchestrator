@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { SettingsIcon, Sun, Moon, CheckCircle2, XCircle, Volume2 } from "lucide-react";
+import { SettingsIcon, Sun, Moon, CheckCircle2, XCircle, Volume2, Zap } from "lucide-react";
 import { fetchAgents } from "../api/client";
 import AgentAvatar from "../components/AgentAvatar";
 import { useSettings } from "../context/SettingsContext";
@@ -97,6 +97,57 @@ export default function SettingsPage() {
               />
               <span className="w-10 text-right text-xs tabular-nums" style={{ color: "var(--text-muted)" }}>
                 {settings.voiceRate.toFixed(2)}x
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+          Caching
+        </h2>
+        <div
+          className="flex flex-col gap-4 rounded-xl border p-4"
+          style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-1.5 text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+                <Zap size={13} /> Semantic cache
+              </div>
+              <div className="text-xs" style={{ color: "var(--text-muted)" }}>
+                Reuse a cached answer for paraphrased repeat questions, not just exact-text repeats.
+              </div>
+            </div>
+            <button
+              onClick={() => update({ semanticCacheEnabled: !settings.semanticCacheEnabled })}
+              className="relative h-6 w-11 rounded-full transition-colors"
+              style={{ background: settings.semanticCacheEnabled ? "#2a78d6" : "var(--border-strong)" }}
+            >
+              <span
+                className="absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform"
+                style={{ transform: settings.semanticCacheEnabled ? "translateX(22px)" : "translateX(2px)" }}
+              />
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between gap-4">
+            <div className="text-sm" style={{ color: "var(--text-primary)" }}>
+              Similarity threshold
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="range"
+                min="0.85"
+                max="0.98"
+                step="0.01"
+                disabled={!settings.semanticCacheEnabled}
+                value={settings.semanticCacheThreshold}
+                onChange={(e) => update({ semanticCacheThreshold: Number(e.target.value) })}
+              />
+              <span className="w-10 text-right text-xs tabular-nums" style={{ color: "var(--text-muted)" }}>
+                {settings.semanticCacheThreshold.toFixed(2)}
               </span>
             </div>
           </div>

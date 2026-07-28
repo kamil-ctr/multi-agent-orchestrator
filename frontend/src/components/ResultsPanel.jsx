@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
-import { Volume2, VolumeX, Download } from "lucide-react";
+import { Volume2, VolumeX, Download, Zap } from "lucide-react";
 import ConfidenceGauge from "./ConfidenceGauge";
 import ComparisonTable from "./ComparisonTable";
 import AgentResponseCard from "./AgentResponseCard";
@@ -72,9 +72,21 @@ export default function ResultsPanel({ result, historyId }) {
               <h2 className="text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
                 Synthesized Answer
               </h2>
-              {result.cached && (
-                <span className="rounded-full px-2 py-0.5 text-xs" style={{ background: "var(--surface-1)", color: "var(--text-muted)" }}>
-                  cached
+              {result.cache_hit === "exact" && (
+                <span
+                  className="flex items-center gap-1 rounded-full px-2 py-0.5 text-xs"
+                  style={{ background: "var(--surface-1)", color: "var(--text-muted)" }}
+                >
+                  <Zap size={11} /> Cached (exact match)
+                </span>
+              )}
+              {result.cache_hit === "semantic" && (
+                <span
+                  className="flex items-center gap-1 rounded-full px-2 py-0.5 text-xs"
+                  style={{ background: "var(--surface-1)", color: "var(--text-muted)" }}
+                  title="Matched a previously-asked, differently-worded question"
+                >
+                  <Zap size={11} /> Semantic cache hit ({result.cache_similarity?.toFixed(2)} similarity)
                 </span>
               )}
               {supported && (

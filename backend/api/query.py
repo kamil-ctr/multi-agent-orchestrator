@@ -41,6 +41,8 @@ class QueryRequest(BaseModel):
     file_name: str | None = None
     use_cache: bool = True
     enabled_agents: list[str] | None = None
+    semantic_cache_enabled: bool | None = None
+    semantic_cache_threshold: float | None = None
 
 
 class QueryAck(BaseModel):
@@ -80,6 +82,8 @@ async def create_query(req: QueryRequest, request: Request) -> QueryAck:
                 file_context=req.file_context,
                 use_cache=req.use_cache,
                 enabled_agents=req.enabled_agents,
+                semantic_cache_enabled=req.semantic_cache_enabled,
+                semantic_cache_threshold=req.semantic_cache_threshold,
                 on_event=on_event,
             )
             conv_store.add_message(

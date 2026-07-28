@@ -91,6 +91,8 @@ class PipelineResult:
     total_tokens_estimate: int
     estimated_cost_usd: float
     cached: bool = False
+    cache_hit: str = "miss"  # "exact" | "semantic" | "miss"
+    cache_similarity: float | None = None
     evaluator_used: str = "heuristic"
     timestamp: float = field(default_factory=time.time)
 
@@ -108,6 +110,8 @@ class PipelineResult:
             "total_tokens_estimate": self.total_tokens_estimate,
             "estimated_cost_usd": self.estimated_cost_usd,
             "cached": self.cached,
+            "cache_hit": self.cache_hit,
+            "cache_similarity": self.cache_similarity,
             "evaluator_used": self.evaluator_used,
             "timestamp": self.timestamp,
         }
@@ -127,6 +131,8 @@ class PipelineResult:
             total_tokens_estimate=d["total_tokens_estimate"],
             estimated_cost_usd=d["estimated_cost_usd"],
             cached=d.get("cached", False),
+            cache_hit=d.get("cache_hit", "miss"),
+            cache_similarity=d.get("cache_similarity"),
             evaluator_used=d.get("evaluator_used", "heuristic"),
             timestamp=d.get("timestamp", time.time()),
         )

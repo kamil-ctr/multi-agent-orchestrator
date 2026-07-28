@@ -55,6 +55,8 @@ class AppConfig:
     streaming_enabled: bool = True
     conversation_context_messages: int = 10
     conversation_context_max_tokens: int = 3000
+    semantic_cache_enabled: bool = True
+    semantic_cache_threshold: float = 0.92
     raw: dict[str, Any] = field(default_factory=dict)
 
 
@@ -100,6 +102,8 @@ def load_config(config_path: str | Path | None = None) -> AppConfig:
     streaming_enabled = os.getenv("STREAMING_ENABLED", "true").strip().lower() not in ("false", "0", "no")
     conversation_context_messages = int(os.getenv("CONVERSATION_CONTEXT_MESSAGES", "10"))
     conversation_context_max_tokens = int(os.getenv("CONVERSATION_CONTEXT_MAX_TOKENS", "3000"))
+    semantic_cache_enabled = os.getenv("SEMANTIC_CACHE_ENABLED", "true").strip().lower() not in ("false", "0", "no")
+    semantic_cache_threshold = float(os.getenv("SEMANTIC_CACHE_THRESHOLD", "0.92"))
 
     return AppConfig(
         agents=agents,
@@ -113,5 +117,7 @@ def load_config(config_path: str | Path | None = None) -> AppConfig:
         streaming_enabled=streaming_enabled,
         conversation_context_messages=conversation_context_messages,
         conversation_context_max_tokens=conversation_context_max_tokens,
+        semantic_cache_enabled=semantic_cache_enabled,
+        semantic_cache_threshold=semantic_cache_threshold,
         raw=raw,
     )

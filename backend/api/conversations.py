@@ -40,6 +40,8 @@ class MessageRequest(BaseModel):
     file_name: str | None = None
     use_cache: bool = True
     enabled_agents: list[str] | None = None
+    semantic_cache_enabled: bool | None = None
+    semantic_cache_threshold: float | None = None
 
 
 async def generate_title(orch, conv_store, conversation_id: int, first_message: str) -> None:
@@ -158,8 +160,11 @@ async def send_message(conversation_id: int, req: MessageRequest, request: Reque
                 image=image,
                 file_context=req.file_context,
                 conversation_context=context,
+                conversation_id=conversation_id,
                 use_cache=req.use_cache,
                 enabled_agents=req.enabled_agents,
+                semantic_cache_enabled=req.semantic_cache_enabled,
+                semantic_cache_threshold=req.semantic_cache_threshold,
                 on_event=on_event,
             )
             store.add_message(
