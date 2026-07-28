@@ -1,3 +1,8 @@
+# Note: this Blueprint documents the service's intended config, but the
+# live service's auto-deploy is actually driven by
+# .github/workflows/render-deploy.yml calling a Deploy Hook — Render's
+# own GitHub App webhook hasn't synced for this service (see that
+# workflow's commit message for the full diagnosis).
 services:
   - type: web
     name: multi-agent-orchestrator-api
