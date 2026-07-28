@@ -19,16 +19,9 @@
 
   /* fixed categorical order — never reassigned per view, identity always paired with a label */
   --agent-gemini: #2a78d6;
-  --agent-claude: #eb6834;
-  --agent-openai: #1baf7a;
   --agent-mistral: #eda100;
   --agent-cohere: #e87ba4;
-  --agent-together: #008300;
-  --agent-grok: #4a3aa7;
   --agent-groq: #e34948;
-  --agent-perplexity: #0891b2;
-  --agent-deepseek: #a3492f;
-  --agent-huggingface: #5b5bd6;
 }
 
 .dark {
@@ -48,16 +41,9 @@
   --status-critical: #e66767;
 
   --agent-gemini: #3987e5;
-  --agent-claude: #d95926;
-  --agent-openai: #199e70;
   --agent-mistral: #c98500;
   --agent-cohere: #d55181;
-  --agent-together: #008300;
-  --agent-grok: #9085e9;
   --agent-groq: #e66767;
-  --agent-perplexity: #0e93a3;
-  --agent-deepseek: #c2703f;
-  --agent-huggingface: #7c7cf0;
 }
 
 * {

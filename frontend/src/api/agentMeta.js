@@ -3,16 +3,9 @@
 // is never color-alone).
 export const AGENT_META = {
   gemini: { label: "Gemini", initial: "G", var: "--agent-gemini" },
-  claude: { label: "Claude", initial: "C", var: "--agent-claude" },
-  openai: { label: "OpenAI", initial: "O", var: "--agent-openai" },
   mistral: { label: "Mistral", initial: "M", var: "--agent-mistral" },
   cohere: { label: "Cohere", initial: "Co", var: "--agent-cohere" },
-  together: { label: "Together", initial: "T", var: "--agent-together" },
-  grok: { label: "Grok", initial: "X", var: "--agent-grok" },
   groq: { label: "Groq", initial: "Gq", var: "--agent-groq" },
-  perplexity: { label: "Perplexity", initial: "P", var: "--agent-perplexity" },
-  deepseek: { label: "DeepSeek", initial: "D", var: "--agent-deepseek" },
-  huggingface: { label: "HuggingFace", initial: "H", var: "--agent-huggingface" },
 };
 
 export function agentColor(name) {

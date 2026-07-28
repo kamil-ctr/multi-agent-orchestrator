@@ -145,7 +145,7 @@ export default function ChatPage() {
               >
                 <Sparkles size={32} style={{ color: "var(--text-muted)" }} />
                 <h1 className="text-xl font-semibold" style={{ color: "var(--text-primary)" }}>
-                  Ask once, hear from 11 agents
+                  Ask once, hear from multiple agents
                 </h1>
                 <p className="max-w-sm text-sm" style={{ color: "var(--text-muted)" }}>
                   Type, speak, or attach an image/document. Every enabled agent answers in parallel,

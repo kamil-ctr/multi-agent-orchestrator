@@ -159,7 +159,7 @@ export default function ChatInput({ onSubmit, disabled }) {
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={listening ? "Listening..." : "Ask all 11 agents anything..."}
+          placeholder={listening ? "Listening..." : "Ask all agents anything..."}
           rows={1}
           disabled={disabled}
           className="max-h-40 min-h-[36px] flex-1 resize-none bg-transparent px-1 py-1.5 text-sm outline-none"

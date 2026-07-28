@@ -20,7 +20,7 @@ Save all three into `docs/screenshots/` using the exact filenames below — the 
 **Steps:**
 1. Navigate to `/` fresh (reload if you have existing history — the empty state only shows when there are no messages in the *current session's* chat view, so a fresh page load is enough even with history in the sidebar)
 2. Make sure the History sidebar is **expanded** (left arrow toggle, top-left) and has at least 2–3 real entries in it, so the screenshot shows a populated, lived-in app rather than a blank first-run
-3. Capture the full browser viewport: top nav (logo, Chat/Leaderboard/Settings tabs, theme toggle), history sidebar, the "Ask once, hear from 11 agents" empty-state message, and the input bar at the bottom with all four action icons (attach file, attach image, mic, send) visible
+3. Capture the full browser viewport: top nav (logo, Chat/Leaderboard/Settings tabs, theme toggle), history sidebar, the "Ask once, hear from multiple agents" empty-state message, and the input bar at the bottom with all four action icons (attach file, attach image, mic, send) visible
 
 **Why this one:** it's the first image anyone sees in the README — it needs to communicate "multi-agent chat app" at a glance without requiring the reader to read any text.
 

@@ -1,6 +1,6 @@
-"""Shared helper for the many providers that expose an OpenAI-compatible
-`/chat/completions` endpoint (Groq, Mistral, Perplexity, HF router,
-OpenAI itself, xAI Grok, DeepSeek, Together AI, ...).
+"""Shared helper for providers that expose an OpenAI-compatible
+`/chat/completions` endpoint (currently Groq and Mistral) — reusable
+for any future provider with the same request/response shape.
 """
 from __future__ import annotations
 

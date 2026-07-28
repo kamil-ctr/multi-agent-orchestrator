@@ -6,10 +6,11 @@
 # huggingface were removed on 2026-07-28 — each either had no key
 # configured or failed with an account-side error (insufficient
 # credit/balance/quota, or a still-invalid key) even though the
-# endpoint/model/auth wiring was verified correct. To bring one back:
-# add its API key to .env, then re-add its block here (see git history
-# or README for the exact fields) — no code changes needed, the adapter
-# classes are untouched in agents/.
+# endpoint/model/auth wiring was verified correct. Their adapter files
+# were later deleted outright during a cleanup pass. To bring one back:
+# restore its adapter file from git history (see the commit that deleted
+# backend/agents/*.py for the removed providers), add its API key to
+# .env, then re-add its block here.
 
 defaults:
   timeout_s: 15

@@ -137,17 +137,11 @@ Open **http://localhost:5173**.
 
 ### `.env` template
 
-All 11 supported providers are listed in [`.env.example`](.env.example); only the ones with an active `config.yaml` block (see the [compatibility matrix](#agent-compatibility-matrix)) are dispatched by default:
+The 4 active providers are listed in [`.env.example`](.env.example) — each has its own `config.yaml` block (see [Agent Compatibility Matrix](#agent-compatibility-matrix)):
 
 ```bash
 # Google Gemini — https://aistudio.google.com/app/apikey
 GEMINI_API_KEY=
-
-# Anthropic Claude — https://console.anthropic.com/settings/keys
-ANTHROPIC_API_KEY=
-
-# Perplexity AI — https://www.perplexity.ai/settings/api
-PERPLEXITY_API_KEY=
 
 # Groq — https://console.groq.com/keys
 GROQ_API_KEY=
@@ -157,21 +151,6 @@ COHERE_API_KEY=
 
 # Mistral AI — https://console.mistral.ai/api-keys
 MISTRAL_API_KEY=
-
-# HuggingFace Inference — https://huggingface.co/settings/tokens
-HUGGINGFACE_API_KEY=
-
-# OpenAI — https://platform.openai.com/api-keys
-OPENAI_API_KEY=
-
-# xAI Grok — https://console.x.ai
-XAI_API_KEY=
-
-# DeepSeek — https://platform.deepseek.com/api_keys
-DEEPSEEK_API_KEY=
-
-# Together AI — https://api.together.xyz/settings/api-keys
-TOGETHER_API_KEY=
 ```
 
 ## Usage
@@ -199,23 +178,16 @@ Once the servers are running, open the browser, type or speak a prompt (optional
 
 ## Agent Compatibility Matrix
 
-The adapter layer supports 11 providers through the same plugin interface. Only four are active in `backend/config.yaml` today — the other seven have verified-correct adapter code (endpoint, auth, request schema) but are blocked by the state of the specific accounts used during development, not by anything in this repository.
+Four providers are active today, each through the same plugin adapter interface:
 
-| Agent | Status | Model | Reason if inactive |
-|---|---|---|---|
-| Gemini | ✅ Active | `gemini-flash-latest` | — |
-| Groq | ✅ Active | `llama-3.1-8b-instant` | — |
-| Cohere | ✅ Active | `command-r-08-2024` | — |
-| Mistral | ✅ Active | `mistral-small-latest` | — |
-| Claude | ⛔ Inactive | `claude-3-5-haiku-20241022` | Account credit balance too low |
-| OpenAI | ⛔ Inactive | `gpt-4o-mini` | Account quota exhausted |
-| DeepSeek | ⛔ Inactive | `deepseek-chat` | Account balance insufficient |
-| Together AI | ⛔ Inactive | `Llama-3.3-70B-Instruct-Turbo-Free` | Account credit limit exceeded |
-| xAI Grok | ⛔ Inactive | `grok-2` | No API key configured |
-| Perplexity | ⛔ Inactive | `sonar` | No API key configured |
-| HuggingFace | ⛔ Inactive | `Llama-3.2-3B-Instruct` | No API key configured |
+| Agent | Model |
+|---|---|
+| Gemini | `gemini-flash-latest` |
+| Groq | `llama-3.1-8b-instant` |
+| Cohere | `command-r-08-2024` |
+| Mistral | `mistral-small-latest` |
 
-**To reactivate any of these:** add its key to `.env`, then re-add its block to `backend/config.yaml` — the adapter class in `backend/agents/` is untouched and requires no code changes. This is intentional: removing a config block (rather than disabling in place) is what keeps an inactive agent from appearing anywhere in the UI, per the registry's discovery-from-config design.
+**To add another provider:** subclass `BaseAgent` in a new `backend/agents/*.py` file, implement `_call_api`, and add a config block to `backend/config.yaml` — the registry auto-discovers it via `pkgutil`, no other file needs to change.
 
 ## API Reference
 
@@ -239,7 +211,7 @@ CORS is restricted to `http://localhost:5173`.
 
 ```
 multi_agent_orchestrator/
-├── .env.example              # all 11 provider keys, documented
+├── .env.example              # all 4 active provider keys, documented
 ├── start.sh                   # one-command dev startup
 ├── docs/
 │   ├── ARCHITECTURE.md         # pipeline deep-dive, sequence diagram, design decisions
@@ -250,7 +222,7 @@ multi_agent_orchestrator/
 │   ├── agents/                 # one adapter per provider (BaseAgent subclasses)
 │   │   ├── base.py              # retry/timeout/backoff, generate()/vision contract
 │   │   ├── registry.py           # auto-discovers agents/*.py — drop-in extensibility
-│   │   └── *_agent.py             # gemini, groq, cohere, mistral, claude, openai, ...
+│   │   └── *_agent.py             # gemini, groq, cohere, mistral
 │   ├── core/
 │   │   ├── schemas.py            # AgentResponse / EvaluationScore / PipelineResult / ImageInput
 │   │   ├── config.py              # config.yaml + .env loader
@@ -303,4 +275,4 @@ Issues and PRs are welcome. Before opening a PR:
 
 ## Acknowledgments
 
-Built on the free-tier APIs of Google (Gemini), Groq, Cohere, and Mistral AI, with adapter support for Anthropic, OpenAI, xAI, DeepSeek, Together AI, Perplexity, and HuggingFace. UI components built with [React](https://react.dev/), [Tailwind CSS](https://tailwindcss.com/), [Framer Motion](https://www.framer.com/motion/), [Recharts](https://recharts.org/), and [Lucide](https://lucide.dev/) icons.
+Built on the free-tier APIs of Google (Gemini), Groq, Cohere, and Mistral AI. UI components built with [React](https://react.dev/), [Tailwind CSS](https://tailwindcss.com/), [Framer Motion](https://www.framer.com/motion/), [Recharts](https://recharts.org/), and [Lucide](https://lucide.dev/) icons.
