@@ -72,6 +72,7 @@ export default function RaceLane({ entry, elapsedMs, axisMax, reducedMotion }) {
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+      whileHover={reducedMotion ? undefined : { y: -1 }}
       className="flex flex-col gap-1.5 rounded-3 border p-2.5"
       style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}
     >

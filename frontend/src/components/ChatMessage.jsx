@@ -58,7 +58,7 @@ export default function ChatMessage({ turn }) {
           <div className="min-w-0 flex-1">
             {turn.status === "running" && <AgentProgressPanel agentStates={turn.agentStates} />}
             {turn.status === "done" && turn.result && (
-              <ResultsPanel result={turn.result} historyId={turn.historyId} />
+              <ResultsPanel result={turn.result} historyId={turn.historyId} reveal={!turn.historical} />
             )}
             {turn.status === "error" && (
               <div className="flex flex-col gap-3">

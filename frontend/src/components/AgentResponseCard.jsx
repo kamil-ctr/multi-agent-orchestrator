@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import AgentAvatar from "./AgentAvatar";
@@ -41,9 +42,15 @@ export default function AgentResponseCard({ response, evaluation, defaultOpen = 
   const color = agentColor(response.agent);
   const statusMeta = STATUS_META[response.status] ?? STATUS_META.disabled;
   const hasText = !!response.response_text;
+  const reducedMotion = useReducedMotion();
 
   return (
-    <div className="overflow-hidden rounded-xl border" style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}>
+    <motion.div
+      whileHover={hasText && !reducedMotion ? { y: -2 } : undefined}
+      transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
+      className="overflow-hidden rounded-xl border"
+      style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}
+    >
       <button
         onClick={() => hasText && setOpen((o) => !o)}
         className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left ${hasText ? "" : "cursor-default"}`}
@@ -102,6 +109,6 @@ export default function AgentResponseCard({ response, evaluation, defaultOpen = 
           {response.error}
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }

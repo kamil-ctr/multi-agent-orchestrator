@@ -102,6 +102,7 @@ export default function ConversationSidebar({ collapsed, onToggle, activeId, onS
   if (collapsed) {
     return (
       <button
+        data-gsap="sidebar"
         onClick={onToggle}
         className="flex w-9 shrink-0 flex-col items-center gap-2 border-r py-3"
         style={{ borderColor: "var(--border)", background: "var(--surface-1)" }}
@@ -115,6 +116,7 @@ export default function ConversationSidebar({ collapsed, onToggle, activeId, onS
 
   return (
     <aside
+      data-gsap="sidebar"
       className="flex w-72 shrink-0 flex-col border-r"
       style={{ borderColor: "var(--border)", background: "var(--surface-1)" }}
     >

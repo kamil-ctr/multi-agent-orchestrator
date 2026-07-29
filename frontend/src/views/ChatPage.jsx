@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
 import { Sparkles, Scale, Code2, GitCompareArrows } from "lucide-react";
 import ChatInput from "../components/ChatInput";
 import ChatMessage from "../components/ChatMessage";
@@ -29,6 +30,7 @@ function seedAgentStates(agentNames) {
   return Object.fromEntries(agentNames.map((n) => [n, { status: "waiting" }]));
 }
 
+
 function messagesToTurns(messages) {
   const turns = [];
   for (let i = 0; i < messages.length; i++) {
@@ -45,6 +47,10 @@ function messagesToTurns(messages) {
         result: next.agent_responses,
         historyId: null,
         error: null,
+        // Loaded from history, not just synthesized — the result-reveal
+        // sequence is a one-time "it just landed" payoff, not something
+        // that should replay every time an old conversation is opened.
+        historical: true,
       });
       i++;
     } else {
@@ -75,6 +81,8 @@ export default function ChatPage() {
   const scrollRef = useRef(null);
   const closeStreamRef = useRef(null);
   const activeConversationIdRef = useRef(null);
+  const pageRef = useRef(null);
+  const isEmpty = turns.length === 0;
 
   useEffect(() => {
     activeConversationIdRef.current = activeConversationId;
@@ -91,6 +99,30 @@ export default function ChatPage() {
   }, [turns]);
 
   useEffect(() => () => closeStreamRef.current?.(), []);
+
+  // Page-load stagger: sidebar in from the left, then the welcome block
+  // piece by piece, then the composer — under 800ms total. Re-fires every
+  // time the composer returns to empty (including "New chat"), not just on
+  // first mount, since that's the moment being staggered in. Skips entirely
+  // once a turn exists — ChatMessage/RaceLane already animate their own
+  // mount via framer-motion, so this timeline never touches the same
+  // elements those do.
+  useGSAP(
+    () => {
+      if (!isEmpty) return;
+      gsap.matchMedia(pageRef.current).add("(prefers-reduced-motion: no-preference)", () => {
+        const tl = gsap.timeline({ defaults: { ease: "expo.out" } });
+        tl.from("[data-gsap='sidebar']", { opacity: 0, x: -16, duration: 0.3 }, 0)
+          .from("[data-gsap='hero-icon']", { opacity: 0, y: 10, scale: 0.92, duration: 0.3 }, 0.05)
+          .from("[data-gsap='hero-heading']", { opacity: 0, y: 8, duration: 0.3 }, 0.12)
+          .from("[data-gsap='hero-text']", { opacity: 0, y: 8, duration: 0.3 }, 0.18)
+          .from("[data-gsap='hero-chip']", { opacity: 0, y: 8, duration: 0.25, stagger: 0.05 }, 0.25)
+          .from("[data-gsap='input-bar']", { opacity: 0, y: 12, duration: 0.35 }, 0.35);
+        return () => tl.kill();
+      });
+    },
+    { scope: pageRef, dependencies: [isEmpty], revertOnUpdate: true }
+  );
 
   const updateTurn = useCallback((id, patch) => {
     setTurns((prev) => prev.map((t) => (t.id === id ? { ...t, ...(typeof patch === "function" ? patch(t) : patch) } : t)));
@@ -250,7 +282,7 @@ export default function ChatPage() {
   const isBusy = turns.some((t) => t.status === "running");
 
   return (
-    <div className="flex h-full min-h-0">
+    <div className="flex h-full min-h-0" ref={pageRef}>
       <ConversationSidebar
         collapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed((c) => !c)}
@@ -263,22 +295,19 @@ export default function ChatPage() {
       <div className="flex min-w-0 flex-1 flex-col">
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6 sm:px-8">
           <div className="mx-auto flex max-w-4xl flex-col gap-8">
-            {turns.length === 0 && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="flex flex-1 flex-col items-center justify-center gap-3 py-24 text-center"
-              >
+            {isEmpty && (
+              <div className="flex flex-1 flex-col items-center justify-center gap-3 py-24 text-center">
                 <span
+                  data-gsap="hero-icon"
                   className="flex h-14 w-14 items-center justify-center rounded-2xl"
                   style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
                 >
                   <Sparkles size={26} />
                 </span>
-                <h1 className="text-xl font-semibold" style={{ color: "var(--text-primary)" }}>
+                <h1 data-gsap="hero-heading" className="text-xl font-semibold" style={{ color: "var(--text-primary)" }}>
                   Ask once, hear from multiple agents
                 </h1>
-                <p className="max-w-sm text-sm" style={{ color: "var(--text-muted)" }}>
+                <p data-gsap="hero-text" className="max-w-sm text-sm" style={{ color: "var(--text-muted)" }}>
                   Type, speak, or attach an image/document. Every enabled agent answers in parallel,
                   gets scored, and gets synthesized into one best answer.
                 </p>
@@ -286,6 +315,7 @@ export default function ChatPage() {
                   {SUGGESTIONS.map(({ icon: Icon, text }) => (
                     <button
                       key={text}
+                      data-gsap="hero-chip"
                       onClick={() => handleSuggestion(text)}
                       className="flex items-center gap-2 rounded-full border px-3.5 py-2 text-left text-xs font-medium transition-colors hover:opacity-80"
                       style={{ borderColor: "var(--border)", background: "var(--surface-2)", color: "var(--text-secondary)" }}
@@ -295,7 +325,7 @@ export default function ChatPage() {
                     </button>
                   ))}
                 </div>
-              </motion.div>
+              </div>
             )}
             {turns.map((turn) => (
               <ChatMessage key={turn.id} turn={turn} />
@@ -304,7 +334,7 @@ export default function ChatPage() {
         </div>
 
         <div className="border-t px-4 py-4 sm:px-8" style={{ borderColor: "var(--border)", background: "var(--surface-0)" }}>
-          <div className="mx-auto max-w-4xl">
+          <div data-gsap="input-bar" className="mx-auto max-w-4xl">
             <ChatInput onSubmit={handleSubmit} disabled={isBusy} prefill={prefill} prefillKey={prefillKey} />
           </div>
         </div>

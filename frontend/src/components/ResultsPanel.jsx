@@ -1,4 +1,6 @@
 import { useEffect, useRef } from "react";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
 import ReactMarkdown from "react-markdown";
 import { Volume2, VolumeX, Download, Zap } from "lucide-react";
 import ConfidenceGauge from "./ConfidenceGauge";
@@ -22,12 +24,16 @@ import { useSettings } from "../context/SettingsContext";
  * @param {Object} props
  * @param {Object} props.result - A full PipelineResult (query, synthesized_answer, evaluations, agent_responses, confidence_score, attribution, ...).
  * @param {number} [props.historyId] - The result's history row id, used to build the Export link; omitted for cache hits that weren't persisted.
+ * @param {boolean} [props.reveal=false] - Play the result-reveal sequence on mount. True only for a
+ *   result that just finished synthesizing live; false for turns restored from conversation history,
+ *   where the "it just landed" payoff moment already happened in a previous session.
  * @returns {JSX.Element}
  */
-export default function ResultsPanel({ result, historyId }) {
+export default function ResultsPanel({ result, historyId, reveal = false }) {
   const { speaking, speak, stop, supported } = useTextToSpeech();
   const { settings } = useSettings();
   const autoplayedRef = useRef(false);
+  const rootRef = useRef(null);
 
   useEffect(() => {
     if (settings.voiceAutoplay && supported && !autoplayedRef.current && result.synthesized_answer) {
@@ -36,6 +42,28 @@ export default function ResultsPanel({ result, historyId }) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [result.synthesized_answer]);
+
+  // The payoff moment: synthesis just finished, so the reveal gets a beat
+  // more theater than the page-load stagger — the card frame first, then the
+  // answer, then the score, then the supporting detail underneath. Skipped
+  // entirely for history loads (see the `reveal` prop) and for
+  // prefers-reduced-motion, where everything simply renders at rest.
+  useGSAP(
+    () => {
+      if (!reveal) return;
+      gsap.matchMedia(rootRef.current).add("(prefers-reduced-motion: no-preference)", () => {
+        const tl = gsap.timeline({ defaults: { ease: "expo.out" } });
+        tl.from("[data-gsap='reveal-card']", { opacity: 0, y: 16, scale: 0.98, duration: 0.35 }, 0)
+          .from("[data-gsap='reveal-answer']", { opacity: 0, y: 10, duration: 0.35 }, 0.15)
+          .from("[data-gsap='reveal-gauge']", { opacity: 0, scale: 0.9, duration: 0.4 }, 0.3)
+          .from("[data-gsap='reveal-meta']", { opacity: 0, y: 6, duration: 0.3 }, 0.4)
+          .from("[data-gsap='reveal-comparison']", { opacity: 0, y: 12, duration: 0.35 }, 0.5)
+          .from("[data-gsap='reveal-responses']", { opacity: 0, y: 12, duration: 0.35 }, 0.62);
+        return () => tl.kill();
+      });
+    },
+    { scope: rootRef, dependencies: [] }
+  );
 
   const evalByAgent = Object.fromEntries((result.evaluations || []).map((e) => [e.agent, e]));
   const responses = result.agent_responses || [];
@@ -65,10 +93,14 @@ export default function ResultsPanel({ result, historyId }) {
   const handleSpeak = () => (speaking ? stop() : speak(result.synthesized_answer, settings.voiceRate));
 
   return (
-    <div className="flex flex-col gap-5">
-      <div className="rounded-2xl border p-5" style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}>
+    <div className="flex flex-col gap-5" ref={rootRef}>
+      <div
+        data-gsap="reveal-card"
+        className="rounded-2xl border p-5"
+        style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}
+      >
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0 flex-1">
+          <div data-gsap="reveal-answer" className="min-w-0 flex-1">
             <div className="mb-2 flex items-center gap-2">
               <h2 className="text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
                 Synthesized Answer
@@ -122,12 +154,13 @@ export default function ResultsPanel({ result, historyId }) {
             )}
           </div>
 
-          <div className="flex shrink-0 flex-col items-center gap-2 self-center">
+          <div data-gsap="reveal-gauge" className="flex shrink-0 flex-col items-center gap-2 self-center">
             <ConfidenceGauge score={result.confidence_score} />
           </div>
         </div>
 
         <div
+          data-gsap="reveal-meta"
           className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 border-t pt-3 text-xs"
           style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}
         >
@@ -149,14 +182,14 @@ export default function ResultsPanel({ result, historyId }) {
         <ExplainabilityPanel explanation={result.explanation} />
       </div>
 
-      <div>
+      <div data-gsap="reveal-comparison">
         <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
           Comparison
         </h3>
         <ComparisonTable rows={tableRows} />
       </div>
 
-      <div>
+      <div data-gsap="reveal-responses">
         <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
           Individual Responses
         </h3>
