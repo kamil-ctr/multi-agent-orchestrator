@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
-import { Sparkles, Scale, Code2, GitCompareArrows } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Sparkles, Scale, Code2, GitCompareArrows, TriangleAlert } from "lucide-react";
 import ChatInput from "../components/ChatInput";
 import ChatMessage from "../components/ChatMessage";
 import ConversationSidebar from "../components/ConversationSidebar";
@@ -280,6 +281,11 @@ export default function ChatPage() {
   }, []);
 
   const isBusy = turns.some((t) => t.status === "running");
+  // Submitting with every agent disabled silently dispatches to nothing —
+  // the race view would just read "0 agents queued" with no explanation.
+  // Block it at the source instead and say why.
+  const noAgentsEnabled =
+    availableAgents.length > 0 && availableAgents.every((n) => settings.disabledAgents.includes(n));
 
   return (
     <div className="flex h-full min-h-0" ref={pageRef}>
@@ -335,7 +341,24 @@ export default function ChatPage() {
 
         <div className="border-t px-4 py-4 sm:px-8" style={{ borderColor: "var(--border)", background: "var(--surface-0)" }}>
           <div data-gsap="input-bar" className="mx-auto max-w-4xl">
-            <ChatInput onSubmit={handleSubmit} disabled={isBusy} prefill={prefill} prefillKey={prefillKey} />
+            {noAgentsEnabled && (
+              <div
+                className="mb-3 flex items-center gap-2 rounded-2 border px-3 py-2 text-xs"
+                style={{ borderColor: "var(--status-warning)", color: "var(--status-warning)" }}
+              >
+                <TriangleAlert size={13} className="shrink-0" />
+                <span>Every agent is disabled — nothing will run.</span>
+                <Link to="/settings" className="ml-auto shrink-0 font-medium hover:opacity-80">
+                  Enable one
+                </Link>
+              </div>
+            )}
+            <ChatInput
+              onSubmit={handleSubmit}
+              disabled={isBusy || noAgentsEnabled}
+              prefill={prefill}
+              prefillKey={prefillKey}
+            />
           </div>
         </div>
       </div>

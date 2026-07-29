@@ -1,21 +1,28 @@
-import { useEffect, useState } from "react";
-import { SettingsIcon, Sun, Moon, CheckCircle2, XCircle, Volume2, Zap } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { SettingsIcon, Sun, Moon, CheckCircle2, XCircle, Volume2, Zap, TriangleAlert } from "lucide-react";
 import { fetchAgents } from "../api/client";
 import AgentAvatar from "../components/AgentAvatar";
+import Skeleton from "../components/Skeleton";
 import { useSettings } from "../context/SettingsContext";
 import { useTheme } from "../context/ThemeContext";
 
 export default function SettingsPage() {
   const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const { settings, toggleAgent, update } = useSettings();
   const { theme, toggleTheme } = useTheme();
 
-  useEffect(() => {
+  const loadAgents = useCallback(() => {
+    setLoading(true);
+    setLoadError(false);
     fetchAgents()
       .then(setAgents)
+      .catch(() => setLoadError(true))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(loadAgents, [loadAgents]);
 
   return (
     <div className="mx-auto flex h-full max-w-3xl flex-col gap-8 overflow-y-auto px-4 py-8 sm:px-8">
@@ -168,7 +175,38 @@ export default function SettingsPage() {
           Toggle which agents are dispatched on new queries. Key status is read from the server's{" "}
           <code>.env</code> — never shown here.
         </p>
-        {loading && <div className="text-sm" style={{ color: "var(--text-muted)" }}>Loading...</div>}
+        {loading && (
+          <div className="flex flex-col gap-2">
+            {[0, 1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="flex items-center justify-between rounded-xl border p-3"
+                style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}
+              >
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-7 w-7 rounded-full" />
+                  <Skeleton className="h-3 w-20" />
+                </div>
+                <Skeleton className="h-6 w-11 rounded-full" />
+              </div>
+            ))}
+          </div>
+        )}
+        {!loading && loadError && (
+          <div
+            className="flex flex-col items-center gap-2 rounded-xl border p-6 text-center"
+            style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}
+          >
+            <TriangleAlert size={18} style={{ color: "var(--text-muted)" }} />
+            <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
+              Couldn't load agents — check that the backend is running.
+            </p>
+            <button onClick={loadAgents} className="text-xs font-medium hover:opacity-80" style={{ color: "var(--accent)" }}>
+              Retry
+            </button>
+          </div>
+        )}
+        {!loading && !loadError && (
         <div className="flex flex-col gap-2">
           {agents.map((agent) => {
             const isOn = !settings.disabledAgents.includes(agent.name);
@@ -220,7 +258,13 @@ export default function SettingsPage() {
               </div>
             );
           })}
+          {agents.length === 0 && (
+            <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+              No agents configured — add API keys to the backend's <code>.env</code>.
+            </p>
+          )}
         </div>
+        )}
       </section>
     </div>
   );

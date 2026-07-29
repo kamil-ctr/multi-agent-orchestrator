@@ -75,7 +75,7 @@ export default function ChatMessage({ turn }) {
                   style={{ borderColor: "var(--status-critical)", color: "var(--status-critical)" }}
                 >
                   <AlertCircle size={16} />
-                  {turn.error || "Something went wrong."}
+                  {turn.error || "This query failed unexpectedly."}
                 </div>
               </div>
             )}

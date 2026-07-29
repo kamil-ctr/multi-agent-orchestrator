@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid, LabelList } from "recharts";
-import { Trophy, Crown } from "lucide-react";
+import { Trophy, Crown, TriangleAlert } from "lucide-react";
 import { fetchLeaderboard } from "../api/client";
 import { agentColor, agentInk, agentLabel } from "../api/agentMeta";
 import AgentAvatar from "../components/AgentAvatar";
+import Skeleton from "../components/Skeleton";
 
 const QUERY_TYPES = [
   { value: null, label: "All" },
@@ -42,13 +43,18 @@ export default function LeaderboardPage() {
   const [queryType, setQueryType] = useState(null);
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     setLoading(true);
+    setLoadError(false);
     fetchLeaderboard(queryType)
       .then((data) => setRows(data.rows))
+      .catch(() => setLoadError(true))
       .finally(() => setLoading(false));
   }, [queryType]);
+
+  useEffect(load, [load]);
 
   const chartData = useMemo(
     () => rows.map((r) => ({ ...r, avg_score_display: r.avg_score ?? 0 })),
@@ -86,15 +92,49 @@ export default function LeaderboardPage() {
         ))}
       </div>
 
-      {loading && <div className="py-12 text-center text-sm" style={{ color: "var(--text-muted)" }}>Loading...</div>}
+      {loading && (
+        <>
+          <div className="rounded-3 border p-5" style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}>
+            <div className="flex items-center gap-4">
+              <Skeleton className="h-11 w-11 rounded-full" />
+              <div className="flex flex-1 flex-col gap-2">
+                <Skeleton className="h-2.5 w-24" />
+                <Skeleton className="h-5 w-32" />
+              </div>
+            </div>
+          </div>
+          <div className="rounded-3 border p-4" style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}>
+            <div className="flex h-[280px] items-end justify-around gap-4 px-4">
+              {[0.85, 0.65, 0.55, 0.4].map((h, i) => (
+                <Skeleton key={i} className="w-full" style={{ height: `${h * 100}%` }} />
+              ))}
+            </div>
+          </div>
+        </>
+      )}
 
-      {!loading && rows.length === 0 && (
+      {!loading && loadError && (
+        <div
+          className="flex flex-col items-center gap-2 rounded-xl border py-12 text-center"
+          style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}
+        >
+          <TriangleAlert size={20} style={{ color: "var(--text-muted)" }} />
+          <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
+            Couldn't load the leaderboard — check that the backend is running.
+          </p>
+          <button onClick={load} className="text-xs font-medium hover:opacity-80" style={{ color: "var(--accent)" }}>
+            Retry
+          </button>
+        </div>
+      )}
+
+      {!loading && !loadError && rows.length === 0 && (
         <div className="py-12 text-center text-sm" style={{ color: "var(--text-muted)" }}>
           No completed queries yet — run some in Chat first.
         </div>
       )}
 
-      {!loading && rows.length > 0 && (
+      {!loading && !loadError && rows.length > 0 && (
         <>
           {leader && (
             <div
