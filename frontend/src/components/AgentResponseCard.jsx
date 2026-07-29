@@ -14,10 +14,10 @@ function ScoreBar({ label, value, color }) {
         {label}
       </span>
       <div className="h-1.5 flex-1 overflow-hidden rounded-full" style={{ background: "var(--border-strong)" }}>
-        <div className="h-full rounded-full" style={{ width: `${(value / 10) * 100}%`, background: color }} />
+        <div className="h-full rounded-full" style={{ width: `${((value ?? 0) / 10) * 100}%`, background: color }} />
       </div>
-      <span className="w-8 shrink-0 text-right tabular-nums" style={{ color: "var(--text-secondary)" }}>
-        {value.toFixed(1)}
+      <span className="numeric w-8 shrink-0 text-right" style={{ color: "var(--text-secondary)" }}>
+        {value != null ? value.toFixed(1) : "—"}
       </span>
     </div>
   );
@@ -67,8 +67,8 @@ export default function AgentResponseCard({ response, evaluation, defaultOpen = 
           )}
         </div>
         <div className="flex items-center gap-3">
-          {evaluation && (
-            <span className="text-sm font-semibold tabular-nums" style={{ color }}>
+          {evaluation?.overall != null && (
+            <span className="numeric text-sm font-semibold" style={{ color }}>
               {evaluation.overall.toFixed(1)}/10
             </span>
           )}
@@ -88,7 +88,7 @@ export default function AgentResponseCard({ response, evaluation, defaultOpen = 
 
       {open && hasText && (
         <div className="border-t px-4 py-3" style={{ borderColor: "var(--border)" }}>
-          {evaluation && (
+          {evaluation?.overall != null && (
             <div className="mb-3 flex flex-col gap-1.5">
               {DIMENSIONS.map((dim) => (
                 <ScoreBar key={dim} label={dim} value={evaluation[dim]} color={color} />

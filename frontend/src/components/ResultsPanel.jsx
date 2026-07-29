@@ -77,6 +77,9 @@ export default function ResultsPanel({ result, historyId, reveal = false }) {
       overall: ev?.overall ?? null,
       depth: ev?.depth ?? null,
       clarity: ev?.clarity ?? null,
+      // The one-line "why" for a fast scan — the judge's own take, not a
+      // re-derived summary, so it never contradicts the score next to it.
+      strengths: ev?.strengths ?? null,
     };
   });
 

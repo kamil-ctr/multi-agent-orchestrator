@@ -24,8 +24,9 @@ export default function ExplainabilityPanel({ explanation }) {
     <div className="mt-3 border-t pt-3" style={{ borderColor: "var(--border)" }}>
       <button
         onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
         className="flex items-center gap-1.5 text-xs font-medium transition-colors hover:opacity-80"
-        style={{ color: "var(--text-secondary)" }}
+        style={{ color: "var(--accent)" }}
       >
         <Lightbulb size={13} />
         Why this synthesis?
@@ -37,10 +38,10 @@ export default function ExplainabilityPanel({ explanation }) {
 
       {open && (
         <div
-          className="mt-2 flex flex-col gap-2 rounded-lg p-3 text-xs leading-relaxed"
-          style={{ background: "var(--surface-1)", color: "var(--text-secondary)" }}
+          className="mt-2 flex flex-col gap-2 rounded-3 border p-3 text-xs leading-relaxed"
+          style={{ background: "var(--accent-soft)", borderColor: "var(--border)", color: "var(--text-secondary)" }}
         >
-          <p>{explanation.summary}</p>
+          <p style={{ color: "var(--text-primary)" }}>{explanation.summary}</p>
           {explanation.key_differentiators?.length > 0 && (
             <ul className="ml-4 list-disc space-y-1">
               {explanation.key_differentiators.map((d, i) => (
