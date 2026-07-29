@@ -48,4 +48,15 @@ export const STATUS_META = {
   timeout: { label: "timed out", color: "var(--status-warning)" },
   rate_limited: { label: "rate limited", color: "var(--status-warning)" },
   disabled: { label: "disabled", color: "var(--text-muted)" },
+  // Frontend-only: the SSE connection dropped while this agent was still
+  // in flight. Distinct from "disabled" (never dispatched) and "error"
+  // (the agent itself reported failure) — this agent may have finished
+  // successfully server-side, we just stopped hearing about it.
+  interrupted: { label: "connection lost", color: "var(--text-muted)" },
 };
+
+// Statuses that will never change again without a new query — used to stop
+// clocks, decide when a lane is done, and freeze state on stream drop.
+// Shared between ChatPage (which writes agentStates) and the race view
+// (which reads them) so the two can't drift apart on what "done" means.
+export const TERMINAL_STATUSES = new Set(["success", "error", "timeout", "rate_limited", "disabled", "interrupted"]);

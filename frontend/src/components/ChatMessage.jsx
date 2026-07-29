@@ -61,12 +61,22 @@ export default function ChatMessage({ turn }) {
               <ResultsPanel result={turn.result} historyId={turn.historyId} />
             )}
             {turn.status === "error" && (
-              <div
-                className="flex items-center gap-2 rounded-xl border px-4 py-3 text-sm"
-                style={{ borderColor: "var(--status-critical)", color: "var(--status-critical)" }}
-              >
-                <AlertCircle size={16} />
-                {turn.error || "Something went wrong."}
+              <div className="flex flex-col gap-3">
+                {/* If any agent got as far as being dispatched, keep the race
+                    view visible (frozen — see ChatPage's stream-error handler)
+                    instead of replacing it outright. Seeing how far each agent
+                    got is more useful than a bare error, and it's what "freeze
+                    in place instead of spinning forever" means for this view. */}
+                {Object.keys(turn.agentStates || {}).length > 0 && (
+                  <AgentProgressPanel agentStates={turn.agentStates} />
+                )}
+                <div
+                  className="flex items-center gap-2 rounded-xl border px-4 py-3 text-sm"
+                  style={{ borderColor: "var(--status-critical)", color: "var(--status-critical)" }}
+                >
+                  <AlertCircle size={16} />
+                  {turn.error || "Something went wrong."}
+                </div>
               </div>
             )}
           </div>

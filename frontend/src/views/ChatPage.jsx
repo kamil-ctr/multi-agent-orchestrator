@@ -12,6 +12,7 @@ import {
   streamQuery,
   AGENT_ORDER,
 } from "../api/client";
+import { TERMINAL_STATUSES } from "../api/agentMeta";
 import { useSettings } from "../context/SettingsContext";
 
 const SUGGESTIONS = [
@@ -160,8 +161,14 @@ export default function ChatPage() {
           queryId,
           (evt) => {
             if (evt.type === "agent_start") {
+              // agent_start carries no timestamp from the server — every
+              // agent's start event fires in a tight loop right before
+              // concurrent dispatch begins, so a client-side stamp here is a
+              // faithful proxy for "this lane's clock started." The race
+              // view turns this into live elapsed time until the
+              // authoritative latency_ms arrives on agent_done/agent_error.
               updateTurn(id, (t) => ({
-                agentStates: { ...t.agentStates, [evt.agent]: { status: "running" } },
+                agentStates: { ...t.agentStates, [evt.agent]: { status: "running", startedAt: performance.now() } },
               }));
             } else if (evt.type === "agent_token") {
               updateTurn(id, (t) => {
@@ -209,7 +216,24 @@ export default function ChatPage() {
               updateTurn(id, { status: "error", error: evt.error });
             }
           },
-          () => updateTurn(id, (t) => (t.status === "running" ? { status: "error", error: "Connection lost" } : {}))
+          () =>
+            updateTurn(id, (t) => {
+              if (t.status !== "running") return {};
+              // The stream died — freeze every lane that was still waiting
+              // or running rather than leaving it stuck mid-animation.
+              // latencyMs gets a real elapsed-time snapshot so the race view
+              // can still show how far each agent got before we lost the
+              // connection, not just that something went wrong.
+              const now = performance.now();
+              const frozen = Object.fromEntries(
+                Object.entries(t.agentStates).map(([name, s]) => {
+                  if (TERMINAL_STATUSES.has(s.status)) return [name, s];
+                  const elapsed = s.startedAt != null ? now - s.startedAt : null;
+                  return [name, { ...s, status: "interrupted", latencyMs: elapsed ?? s.latencyMs }];
+                })
+              );
+              return { status: "error", error: "Connection lost", agentStates: frozen };
+            })
         );
       } catch (err) {
         updateTurn(id, { status: "error", error: err.response?.data?.detail || "Failed to submit query" });
