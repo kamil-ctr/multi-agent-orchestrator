@@ -166,9 +166,10 @@
   /* --- motion ------------------------------------------------------------
      --ease-vivid / --duration-base are the Vivid+Co motion contract: every
      UI transition uses this curve at 0.5s. --ease-lane stays linear on
-     purpose (see RaceLane.jsx) — a bar whose length encodes elapsed time
-     must not be eased. The rest of the pre-existing durations/eases are
-     kept for components not yet migrated to --ease-vivid. */
+     purpose (see PrismRace.jsx) — a bar whose length encodes elapsed time
+     must not be eased; only the prism pulse itself uses --ease-vivid. The
+     rest of the pre-existing durations/eases are kept for components not
+     yet migrated to --ease-vivid. */
   --ease-vivid: cubic-bezier(0.52, 0.01, 0, 1);
   --duration-base: 0.5s;
 

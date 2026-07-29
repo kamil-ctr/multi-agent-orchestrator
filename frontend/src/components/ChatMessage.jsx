@@ -1,13 +1,13 @@
 import { motion } from "framer-motion";
 import { FileText, Bot, AlertCircle } from "lucide-react";
-import AgentProgressPanel from "./AgentProgressPanel";
+import PrismRace from "./PrismRace";
 import ResultsPanel from "./ResultsPanel";
 
 /**
  * One conversation turn: the user's prompt bubble (with attachment chip, if
  * any) plus the assistant-side response, which renders as one of three
- * states depending on `turn.status` — a live AgentProgressPanel while
- * running, a ResultsPanel once synthesis completes, or an inline error.
+ * states depending on `turn.status` — a live PrismRace while running, a
+ * ResultsPanel once synthesis completes, or an inline error.
  *
  * @param {Object} props
  * @param {Object} props.turn - One entry from ChatPage's `turns` state:
@@ -56,7 +56,7 @@ export default function ChatMessage({ turn }) {
             <Bot size={15} />
           </div>
           <div className="min-w-0 flex-1">
-            {turn.status === "running" && <AgentProgressPanel agentStates={turn.agentStates} />}
+            {turn.status === "running" && <PrismRace agentStates={turn.agentStates} />}
             {turn.status === "done" && turn.result && (
               <ResultsPanel result={turn.result} historyId={turn.historyId} reveal={!turn.historical} />
             )}
@@ -67,9 +67,7 @@ export default function ChatMessage({ turn }) {
                     instead of replacing it outright. Seeing how far each agent
                     got is more useful than a bare error, and it's what "freeze
                     in place instead of spinning forever" means for this view. */}
-                {Object.keys(turn.agentStates || {}).length > 0 && (
-                  <AgentProgressPanel agentStates={turn.agentStates} />
-                )}
+                {Object.keys(turn.agentStates || {}).length > 0 && <PrismRace agentStates={turn.agentStates} />}
                 <div
                   className="flex items-center gap-2 rounded-xl border px-4 py-3 text-sm"
                   style={{ borderColor: "var(--status-critical)", color: "var(--status-critical)" }}
