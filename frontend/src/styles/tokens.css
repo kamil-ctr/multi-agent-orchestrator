@@ -37,27 +37,43 @@
   --rule-strong: #ddd9cf;
 
   /* --- 1. primitives: agent identity ---------------------------------- */
-  /* Fixed categorical order, brand-faithful hues, never reassigned per view.
-     Three stops each so contrast holds wherever the hue is used:
+  /* Fixed categorical order. Three stops each so contrast holds wherever the
+     hue is used:
        -mark  fills, lanes, bars, avatars   >= 3:1 vs paper-0  (graphic)
        -ink   scores, labels, any text      >= 4.5:1 vs paper-0 (text)
        -on    foreground placed ON -mark    >= 4.5:1           (text)
      Identity is still never color-alone — see api/agentMeta.js, which pairs
-     every hue with a label and an initial. */
+     every hue with a label and an initial.
+
+     Retuned from the original brand-literal hues after the dataviz skill's
+     categorical-separation validator hard-failed the palette in both themes:
+     Groq (red), Mistral (amber) and Cohere (pink) all sit in the same warm
+     band, and deuteranopia/protanopia collapse that band further, so the
+     worst pair (Groq↔Cohere) measured ΔE 9.6-9.9 normal-vision — the
+     validator's own rule is that secondary encoding (our labels/avatars)
+     does NOT excuse a normal-vision floor this low. Retuned via
+     node scripts/validate_palette.js from the dataviz skill until every
+     pair cleared >=15 ΔE normal-vision and >=8 ΔE CVD in both themes;
+     confirmed unchanged: worst-case graphic contrast is still >=3:1 and
+     these -ink/-on derivatives still clear >=4.5:1 (see contrast comments
+     on each line). Gemini is unchanged in light mode; every other stop
+     moved, some substantially (Cohere pink -> rose, Groq's dark-mode red
+     went notably more muted) — this was a deliberate, disclosed trade
+     against the original literal brand hues, not an oversight. */
   --agent-gemini-mark: #2570ce; /* 4.30:1 vs paper-0 · white on it 4.90:1 */
-  --agent-gemini-ink: #1d5faf; /*  5.57:1 vs paper-0 */
+  --agent-gemini-ink: #246cc6; /*  4.57:1 vs paper-0 */
   --agent-gemini-on: var(--paper-2);
 
-  --agent-mistral-mark: #b57500; /* 3.34:1 vs paper-0 · ink on it 4.88:1 */
-  --agent-mistral-ink: #8a5a00; /*  5.20:1 vs paper-0 */
+  --agent-mistral-mark: #ab8600; /* 3.00:1 vs paper-0 · ink on it 5.44:1 */
+  --agent-mistral-ink: #876a00; /*   4.50:1 vs paper-0 */
   --agent-mistral-on: var(--ink-0);
 
-  --agent-cohere-mark: #d24e82; /*  3.58:1 vs paper-0 · ink on it 4.56:1 */
-  --agent-cohere-ink: #b23a69; /*   4.98:1 vs paper-0 */
+  --agent-cohere-mark: #c25a9e; /* 3.51:1 vs paper-0 · ink on it 4.65:1 */
+  --agent-cohere-ink: #a74d88; /*  4.54:1 vs paper-0 */
   --agent-cohere-on: var(--ink-0);
 
-  --agent-groq-mark: #d33736; /*    4.22:1 vs paper-0 · white on it 4.81:1 */
-  --agent-groq-ink: #c02f2e; /*     5.00:1 vs paper-0 */
+  --agent-groq-mark: #992b2a; /* 6.74:1 vs paper-0 · white on it 7.68:1 */
+  --agent-groq-ink: #992b2a; /*  6.74:1 vs paper-0 (mark already clears text contrast) */
   --agent-groq-on: var(--paper-2);
 
   /* --- 1. primitives: status ------------------------------------------ */
@@ -127,23 +143,28 @@
   --rule-strong: #302f2c;
 
   /* --- 1. primitives: agent identity ---------------------------------- */
-  /* Lifted so every mark clears 5.7:1 against the darkest card surface;
-     -on flips to ink because all four marks are now light. */
-  --agent-gemini-mark: #4e9bf0; /* 6.82:1 vs paper-0 · ink on it 6.44:1 */
-  --agent-gemini-ink: #7db8f5; /*  9.42:1 */
+  /* Retuned alongside the light theme (see :root's comment on this block for
+     why) — the original bright, pastel-ish dark marks all sat too light for
+     a categorical palette on a dark surface (OKLCH L 0.68-0.76, above this
+     validator's 0.48-0.67 band for dark) on top of the same warm-hue
+     collision. These are darker and more muted than before; -on now varies
+     per agent (ink for the two lighter marks, paper for the two darker
+     ones) rather than a uniform light-on-everything. */
+  --agent-gemini-mark: #5487d6; /* 4.72:1 vs paper-0 · dark text on it 5.45:1 */
+  --agent-gemini-ink: #5487d6; /*  4.72:1 (mark already clears text contrast) */
   --agent-gemini-on: var(--paper-0);
 
-  --agent-mistral-mark: #e8a22b; /* 9.03:1 · ink on it 8.53:1 */
-  --agent-mistral-ink: #e8a22b; /*  9.03:1 */
+  --agent-mistral-mark: #b98a2c; /* 5.47:1 vs paper-0 · dark text on it 6.31:1 */
+  --agent-mistral-ink: #b98a2c; /*  5.47:1 (mark already clears text contrast) */
   --agent-mistral-on: var(--paper-0);
 
-  --agent-cohere-mark: #f08ab2; /*  8.42:1 · ink on it 7.95:1 */
-  --agent-cohere-ink: #f49abf; /*   9.58:1 */
-  --agent-cohere-on: var(--paper-0);
+  --agent-cohere-mark: #9e4691; /* 3.04:1 worst-of-3 surfaces · light text on it 5.18:1 */
+  --agent-cohere-ink: #c25eb3; /*  4.51:1 worst-of-3 surfaces */
+  --agent-cohere-on: var(--ink-0);
 
-  --agent-groq-mark: #f26b6a; /*    6.64:1 · ink on it 6.27:1 */
-  --agent-groq-ink: #f58382; /*     7.92:1 */
-  --agent-groq-on: var(--paper-0);
+  --agent-groq-mark: #b04a2c; /* 3.14:1 worst-of-3 surfaces · light text on it 4.94:1 */
+  --agent-groq-ink: #d26342; /*  4.55:1 worst-of-3 surfaces */
+  --agent-groq-on: var(--ink-0);
 
   /* --- 1. primitives: status ------------------------------------------ */
   --signal-good: #4fc57a; /* 9.00:1 vs paper-0 */
