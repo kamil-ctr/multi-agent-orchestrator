@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Paperclip, Mic, Camera, Send, X, Loader2, FileText, Square } from "lucide-react";
 import { uploadFile } from "../api/client";
 import { useSpeechToText } from "../hooks/useVoice";
@@ -20,9 +20,12 @@ const FILE_ACCEPT = ".pdf,.txt,.md,.csv,.json,.docx,.py,.js,.jsx,.ts,.tsx,.java,
  * @param {(payload: {text: string, attachment: Object|null}) => void} props.onSubmit
  *   Called with the composed prompt text and any attachment when the user sends.
  * @param {boolean} props.disabled - Disables all input while a query is in flight.
+ * @param {string} [props.prefill] - Text to drop into the composer (e.g. a clicked
+ *   suggestion chip). Applied whenever `prefillKey` changes, not on every render.
+ * @param {*} [props.prefillKey] - Any value whose identity change re-applies `prefill`.
  * @returns {JSX.Element}
  */
-export default function ChatInput({ onSubmit, disabled }) {
+export default function ChatInput({ onSubmit, disabled, prefill, prefillKey }) {
   const [text, setText] = useState("");
   const [attachment, setAttachment] = useState(null); // { kind, filename, ... }
   const [uploading, setUploading] = useState(false);
@@ -37,6 +40,13 @@ export default function ChatInput({ onSubmit, disabled }) {
       if (isFinal) textareaRef.current?.focus();
     },
   });
+
+  useEffect(() => {
+    if (prefillKey == null) return;
+    setText(prefill || "");
+    textareaRef.current?.focus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefillKey]);
 
   const handlePick = async (e) => {
     const file = e.target.files?.[0];
@@ -110,7 +120,7 @@ export default function ChatInput({ onSubmit, disabled }) {
       )}
 
       <div
-        className="flex items-end gap-2 rounded-2xl border p-2"
+        className="flex items-end gap-2 rounded-2xl border p-2 shadow-[var(--shadow-sm)] transition-shadow focus-within:shadow-[var(--shadow-md)]"
         style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}
       >
         <input ref={fileInputRef} type="file" accept={FILE_ACCEPT} className="hidden" onChange={handlePick} />
@@ -170,8 +180,8 @@ export default function ChatInput({ onSubmit, disabled }) {
           type="button"
           onClick={submit}
           disabled={disabled || uploading || (!text.trim() && !attachment)}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white transition-opacity disabled:opacity-30"
-          style={{ background: "#2a78d6" }}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white transition-all hover:brightness-110 disabled:opacity-30 disabled:hover:brightness-100"
+          style={{ background: "var(--accent)" }}
         >
           {uploading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
         </button>

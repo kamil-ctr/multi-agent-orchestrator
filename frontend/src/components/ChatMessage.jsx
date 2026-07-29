@@ -39,8 +39,8 @@ export default function ChatMessage({ turn }) {
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            className="rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm text-white"
-            style={{ background: "#2a78d6" }}
+            className="rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm text-white shadow-[var(--shadow-sm)]"
+            style={{ background: "var(--accent)" }}
           >
             {turn.prompt}
           </motion.div>

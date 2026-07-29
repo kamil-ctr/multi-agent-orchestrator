@@ -49,7 +49,7 @@ export default function LeaderboardPage() {
   return (
     <div className="mx-auto flex h-full max-w-5xl flex-col gap-6 overflow-y-auto px-4 py-8 sm:px-8">
       <div className="flex items-center gap-2">
-        <Trophy size={22} className="text-blue-500" />
+        <Trophy size={22} style={{ color: "var(--accent)" }} />
         <h1 className="text-xl font-semibold" style={{ color: "var(--text-primary)" }}>
           Agent Leaderboard
         </h1>
@@ -62,8 +62,8 @@ export default function LeaderboardPage() {
             onClick={() => setQueryType(qt.value)}
             className="rounded-full px-3 py-1.5 text-xs font-medium transition-colors"
             style={{
-              background: queryType === qt.value ? "#2a78d6" : "var(--surface-2)",
-              color: queryType === qt.value ? "#fff" : "var(--text-secondary)",
+              background: queryType === qt.value ? "var(--accent)" : "var(--surface-2)",
+              color: queryType === qt.value ? "var(--accent-contrast)" : "var(--text-secondary)",
             }}
           >
             {qt.label}

@@ -20,7 +20,7 @@ export default function SettingsPage() {
   return (
     <div className="mx-auto flex h-full max-w-3xl flex-col gap-8 overflow-y-auto px-4 py-8 sm:px-8">
       <div className="flex items-center gap-2">
-        <SettingsIcon size={22} className="text-blue-500" />
+        <SettingsIcon size={22} style={{ color: "var(--accent)" }} />
         <h1 className="text-xl font-semibold" style={{ color: "var(--text-primary)" }}>
           Settings
         </h1>
@@ -73,7 +73,7 @@ export default function SettingsPage() {
             <button
               onClick={() => update({ voiceAutoplay: !settings.voiceAutoplay })}
               className="relative h-6 w-11 rounded-full transition-colors"
-              style={{ background: settings.voiceAutoplay ? "#2a78d6" : "var(--border-strong)" }}
+              style={{ background: settings.voiceAutoplay ? "var(--accent)" : "var(--border-strong)" }}
             >
               <span
                 className="absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform"
@@ -123,7 +123,7 @@ export default function SettingsPage() {
             <button
               onClick={() => update({ semanticCacheEnabled: !settings.semanticCacheEnabled })}
               className="relative h-6 w-11 rounded-full transition-colors"
-              style={{ background: settings.semanticCacheEnabled ? "#2a78d6" : "var(--border-strong)" }}
+              style={{ background: settings.semanticCacheEnabled ? "var(--accent)" : "var(--border-strong)" }}
             >
               <span
                 className="absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform"
@@ -200,7 +200,7 @@ export default function SettingsPage() {
                   <button
                     onClick={() => toggleAgent(agent.name)}
                     className="relative h-6 w-11 rounded-full transition-colors"
-                    style={{ background: isOn ? "#2a78d6" : "var(--border-strong)" }}
+                    style={{ background: isOn ? "var(--accent)" : "var(--border-strong)" }}
                   >
                     <span
                       className="absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform"

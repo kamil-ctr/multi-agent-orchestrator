@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from "react-router-dom";
+import { motion } from "framer-motion";
 import { MessageSquare, Trophy, Settings, Sun, Moon, Bot } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 
@@ -23,11 +24,16 @@ export default function Layout() {
   return (
     <div className="flex h-screen flex-col" style={{ background: "var(--surface-0)" }}>
       <header
-        className="flex shrink-0 items-center justify-between border-b px-4 py-2.5"
+        className="flex shrink-0 items-center justify-between border-b px-4 py-2.5 shadow-[var(--shadow-sm)]"
         style={{ borderColor: "var(--border)", background: "var(--surface-1)" }}
       >
         <div className="flex items-center gap-2 font-semibold" style={{ color: "var(--text-primary)" }}>
-          <Bot size={22} className="text-blue-500" />
+          <span
+            className="flex h-7 w-7 items-center justify-center rounded-lg"
+            style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
+          >
+            <Bot size={17} />
+          </span>
           <span className="hidden sm:inline">Multi-Agent Orchestrator</span>
         </div>
 
@@ -38,17 +44,26 @@ export default function Layout() {
               to={to}
               end={end}
               className={({ isActive }) =>
-                `flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                `relative flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
                   isActive ? "text-white" : "hover:opacity-80"
                 }`
               }
-              style={({ isActive }) => ({
-                background: isActive ? "#2a78d6" : "transparent",
-                color: isActive ? "#fff" : "var(--text-secondary)",
-              })}
+              style={({ isActive }) => ({ color: isActive ? "var(--accent-contrast)" : "var(--text-secondary)" })}
             >
-              <Icon size={15} />
-              <span className="hidden md:inline">{label}</span>
+              {({ isActive }) => (
+                <>
+                  {isActive && (
+                    <motion.span
+                      layoutId="nav-active-pill"
+                      className="absolute inset-0 rounded-md"
+                      style={{ background: "var(--accent)" }}
+                      transition={{ type: "spring", stiffness: 500, damping: 35 }}
+                    />
+                  )}
+                  <Icon size={15} className="relative" />
+                  <span className="relative hidden md:inline">{label}</span>
+                </>
+              )}
             </NavLink>
           ))}
         </nav>

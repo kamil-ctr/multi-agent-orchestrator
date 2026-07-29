@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
+import { ArrowUp, ArrowDown, ArrowUpDown, Crown } from "lucide-react";
 import AgentAvatar from "./AgentAvatar";
 import { STATUS_META } from "../api/agentMeta";
 
@@ -38,6 +38,10 @@ export default function ComparisonTable({ rows }) {
     });
     return copy;
   }, [rows, sortKey, sortDir]);
+
+  const scored = rows.filter((r) => r.overall != null);
+  const winner =
+    scored.length > 1 ? scored.reduce((best, r) => (r.overall > best.overall ? r : best)).agent : null;
 
   const toggleSort = (key) => {
     if (sortKey === key) {
@@ -80,13 +84,21 @@ export default function ComparisonTable({ rows }) {
         <tbody>
           {sorted.map((row) => {
             const statusMeta = STATUS_META[row.status] ?? STATUS_META.disabled;
+            const isWinner = row.agent === winner;
             return (
-              <tr key={row.agent} className="border-t" style={{ borderColor: "var(--border)" }}>
+              <tr
+                key={row.agent}
+                className="border-t"
+                style={{ borderColor: "var(--border)", background: isWinner ? "var(--accent-soft)" : "transparent" }}
+              >
                 <td className="px-3 py-2">
                   <AgentAvatar name={row.agent} size={22} showLabel />
                 </td>
                 <td className="px-3 py-2 tabular-nums" style={{ color: "var(--text-primary)" }}>
-                  {row.overall != null ? `${row.overall.toFixed(1)}/10` : "—"}
+                  <span className="inline-flex items-center gap-1.5">
+                    {row.overall != null ? `${row.overall.toFixed(1)}/10` : "—"}
+                    {isWinner && <Crown size={13} style={{ color: "var(--status-warning)" }} />}
+                  </span>
                 </td>
                 <td className="px-3 py-2 tabular-nums" style={{ color: "var(--text-secondary)" }}>
                   {row.latency_ms != null ? `${Math.round(row.latency_ms)}ms` : "—"}

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Scale, Code2, GitCompareArrows } from "lucide-react";
 import ChatInput from "../components/ChatInput";
 import ChatMessage from "../components/ChatMessage";
 import ConversationSidebar from "../components/ConversationSidebar";
@@ -13,6 +13,12 @@ import {
   AGENT_ORDER,
 } from "../api/client";
 import { useSettings } from "../context/SettingsContext";
+
+const SUGGESTIONS = [
+  { icon: GitCompareArrows, text: "What are the main differences between TCP and UDP?" },
+  { icon: Code2, text: "Explain how quicksort works, step by step" },
+  { icon: Scale, text: "Is it better to use REST or GraphQL for a public API?" },
+];
 
 function newTurnId() {
   return `t_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -62,6 +68,8 @@ export default function ChatPage() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sidebarRefreshKey, setSidebarRefreshKey] = useState(0);
   const [availableAgents, setAvailableAgents] = useState(AGENT_ORDER);
+  const [prefill, setPrefill] = useState(null);
+  const [prefillKey, setPrefillKey] = useState(0);
   const { settings } = useSettings();
   const scrollRef = useRef(null);
   const closeStreamRef = useRef(null);
@@ -210,6 +218,11 @@ export default function ChatPage() {
     [availableAgents, settings.disabledAgents, settings.semanticCacheEnabled, settings.semanticCacheThreshold, updateTurn]
   );
 
+  const handleSuggestion = useCallback((text) => {
+    setPrefill(text);
+    setPrefillKey((k) => k + 1);
+  }, []);
+
   const isBusy = turns.some((t) => t.status === "running");
 
   return (
@@ -232,7 +245,12 @@ export default function ChatPage() {
                 animate={{ opacity: 1 }}
                 className="flex flex-1 flex-col items-center justify-center gap-3 py-24 text-center"
               >
-                <Sparkles size={32} style={{ color: "var(--text-muted)" }} />
+                <span
+                  className="flex h-14 w-14 items-center justify-center rounded-2xl"
+                  style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
+                >
+                  <Sparkles size={26} />
+                </span>
                 <h1 className="text-xl font-semibold" style={{ color: "var(--text-primary)" }}>
                   Ask once, hear from multiple agents
                 </h1>
@@ -240,6 +258,19 @@ export default function ChatPage() {
                   Type, speak, or attach an image/document. Every enabled agent answers in parallel,
                   gets scored, and gets synthesized into one best answer.
                 </p>
+                <div className="mt-2 flex flex-wrap justify-center gap-2">
+                  {SUGGESTIONS.map(({ icon: Icon, text }) => (
+                    <button
+                      key={text}
+                      onClick={() => handleSuggestion(text)}
+                      className="flex items-center gap-2 rounded-full border px-3.5 py-2 text-left text-xs font-medium transition-colors hover:opacity-80"
+                      style={{ borderColor: "var(--border)", background: "var(--surface-2)", color: "var(--text-secondary)" }}
+                    >
+                      <Icon size={13} style={{ color: "var(--accent)" }} />
+                      {text}
+                    </button>
+                  ))}
+                </div>
               </motion.div>
             )}
             {turns.map((turn) => (
@@ -250,7 +281,7 @@ export default function ChatPage() {
 
         <div className="border-t px-4 py-4 sm:px-8" style={{ borderColor: "var(--border)", background: "var(--surface-0)" }}>
           <div className="mx-auto max-w-4xl">
-            <ChatInput onSubmit={handleSubmit} disabled={isBusy} />
+            <ChatInput onSubmit={handleSubmit} disabled={isBusy} prefill={prefill} prefillKey={prefillKey} />
           </div>
         </div>
       </div>
