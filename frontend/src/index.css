@@ -1,56 +1,50 @@
 @import "tailwindcss";
 
-/* Self-hosted, bundled by Vite — no render-blocking request to a third-party
-   font host. The variable files ship every subset behind a unicode-range, so
-   a latin-only page downloads only the latin slice. */
-@import "@fontsource-variable/space-grotesk";
-@import "@fontsource-variable/ibm-plex-sans/wght.css";
-@import "@fontsource/ibm-plex-mono/latin-400.css";
-@import "@fontsource/ibm-plex-mono/latin-600.css";
+/* Inter Variable and JetBrains Mono are imported in main.jsx (self-hosted via
+   @fontsource, bundled by Vite — no render-blocking request to a third-party
+   font host). */
 
 @import "./styles/tokens.css";
 @import "./styles/base.css";
 
-@custom-variant dark (&:where(.dark, .dark *));
-
 /* Expose the theme-invariant tokens as Tailwind utilities (font-display,
    text-2xs, rounded-3, ease-lane, …).
 
-   Colors are deliberately absent. Tailwind resolves @theme values against
-   :root at computed-value time, so a color mapped here would freeze at its
-   light value and never follow the .dark swap. Color stays on plain custom
-   properties, consumed as var(--text-primary) etc. — which is also the
-   pattern the existing components already use. */
+   Colors are deliberately absent from @theme and stay plain custom
+   properties, consumed as var(--text-primary) etc. — dark is the only
+   theme now, but this keeps color resolution consistent with the rest of
+   the token system. */
 @theme {
-  --font-display: "Space Grotesk Variable", "Space Grotesk", system-ui, sans-serif;
-  --font-body: "IBM Plex Sans Variable", "IBM Plex Sans", system-ui, -apple-system, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-display: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
 
-  --text-2xs: 0.6875rem;
-  --text-2xs--line-height: 1.35;
-  --text-xs: 0.75rem;
-  --text-xs--line-height: 1.45;
-  --text-sm: 0.8125rem;
+  --text-2xs: 0.8125rem; /* 13 — caption / label */
+  --text-2xs--line-height: 1.2;
+  --text-xs: 0.8125rem; /* 13 — mono-data */
+  --text-xs--line-height: 1;
+  --text-sm: 0.9375rem; /* 15 — body-sm */
   --text-sm--line-height: 1.5;
-  --text-base: 0.875rem;
-  --text-base--line-height: 1.6;
-  --text-md: 1rem;
-  --text-md--line-height: 1.55;
-  --text-lg: 1.25rem;
-  --text-lg--line-height: 1.35;
-  --text-xl: 1.75rem;
-  --text-xl--line-height: 1.2;
-  --text-2xl: 2.5rem;
-  --text-2xl--line-height: 1.08;
-  --text-3xl: 3.5rem;
+  --text-base: 1.0625rem; /* 17 — body */
+  --text-base--line-height: 1.5;
+  --text-md: 1.0625rem; /* 17 — alias of body */
+  --text-md--line-height: 1.5;
+  --text-lg: 1.5rem; /* 24 — heading-sm */
+  --text-lg--line-height: 1.2;
+  --text-xl: 2.25rem; /* 36 — heading */
+  --text-xl--line-height: 1.1;
+  --text-2xl: 4.5rem; /* 72 — display */
+  --text-2xl--line-height: 1;
+  --text-3xl: 4.5rem; /* 72 — alias of display */
   --text-3xl--line-height: 1;
 
-  --radius-1: 2px;
+  --radius-1: 0px;
   --radius-2: 4px;
-  --radius-3: 8px;
-  --radius-4: 12px;
-  --radius-5: 16px;
+  --radius-3: 0px;
+  --radius-4: 0px;
+  --radius-5: 0px;
 
+  --ease-vivid: cubic-bezier(0.52, 0.01, 0, 1);
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
   --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);

@@ -29,10 +29,27 @@ h1,
 h2,
 h3 {
   font-family: var(--font-display);
-  letter-spacing: var(--tracking-display);
-  line-height: var(--leading-snug);
-  font-weight: var(--weight-semibold);
+  font-weight: var(--weight-regular);
   margin: 0;
+}
+
+/* display (72px) */
+h1 {
+  letter-spacing: var(--tracking-display);
+  line-height: var(--leading-tight);
+}
+
+/* heading (36px) — the only role where 700 is permitted, applied per call
+   site (e.g. font-bold) rather than as a base default. */
+h2 {
+  letter-spacing: var(--tracking-heading);
+  line-height: var(--leading-heading);
+}
+
+/* heading-sm (24px) */
+h3 {
+  letter-spacing: var(--tracking-heading-sm);
+  line-height: var(--leading-snug);
 }
 
 code,
@@ -44,31 +61,34 @@ pre {
 
 /* Every measured value in this app — latency, tokens, scores, deltas, cost —
    is monospaced with tabular figures so columns of numbers align and a
-   changing digit never shifts its neighbours. */
+   changing digit never shifts its neighbours. This is the mono-data role:
+   13px, 400, 0 tracking, 1.0 line-height. */
 .numeric {
   font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: var(--leading-tight);
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1, "zero" 1; /* slashed zero */
-  letter-spacing: -0.01em;
+  letter-spacing: var(--tracking-normal);
 }
 
-/* Uppercase micro-label used for section heads and column headers. */
+/* Uppercase micro-label used for section heads and column headers. The
+   caption role: 13px, 400, +0.02em, 1.2 line-height. */
 .label {
   font-family: var(--font-body);
   font-size: var(--text-2xs);
-  font-weight: var(--weight-semibold);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-snug);
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
   color: var(--text-muted);
 }
 
-/* Visible keyboard focus on every interactive element. The two-tone ring
-   (surface spacer + ink halo) stays legible on light grounds, dark grounds,
-   and on top of the ink-filled buttons themselves. */
+/* Visible keyboard focus on every interactive element. No box-shadow — a
+   plain 1px outline reads clearly against the obsidian canvas. */
 :focus-visible {
-  outline: none;
-  border-radius: var(--radius-2);
-  box-shadow: var(--focus-ring);
+  outline: 1px solid var(--text-primary);
+  outline-offset: 2px;
 }
 
 /* Pointer affordance on everything that acts like a control. */
