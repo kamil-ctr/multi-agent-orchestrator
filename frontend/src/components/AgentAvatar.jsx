@@ -1,4 +1,4 @@
-import { agentColor, agentInitial, agentLabel } from "../api/agentMeta";
+import { agentColor, agentInitial, agentLabel, agentOn } from "../api/agentMeta";
 
 /**
  * Colored initial-letter avatar for one agent, optionally with its name label.
@@ -19,8 +19,16 @@ export default function AgentAvatar({ name, size = 28, showLabel = false, classN
   return (
     <div className={`flex items-center gap-2 ${className}`}>
       <div
-        className="flex shrink-0 items-center justify-center rounded-full font-semibold text-white"
-        style={{ width: size, height: size, background: color, fontSize: size * 0.4 }}
+        className="numeric flex shrink-0 items-center justify-center rounded-full font-semibold"
+        style={{
+          width: size,
+          height: size,
+          background: color,
+          // Per-agent, per-theme foreground. Hardcoding white here failed
+          // 4.5:1 on Mistral (3.15:1) and Cohere (3.59:1) in light mode.
+          color: agentOn(name),
+          fontSize: size * 0.4,
+        }}
         title={agentLabel(name)}
       >
         {agentInitial(name)}

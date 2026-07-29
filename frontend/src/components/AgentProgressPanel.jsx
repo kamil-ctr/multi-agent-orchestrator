@@ -37,7 +37,8 @@ export default function AgentProgressPanel({ agentStates }) {
       </div>
       <div className="h-1.5 w-full overflow-hidden rounded-full" style={{ background: "var(--border-strong)" }}>
         <motion.div
-          className="h-full rounded-full bg-blue-500"
+          className="h-full rounded-full"
+          style={{ background: "var(--accent)" }}
           animate={{ width: `${pct}%` }}
           transition={{ duration: 0.4 }}
         />

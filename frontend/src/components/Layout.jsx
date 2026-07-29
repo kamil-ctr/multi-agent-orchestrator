@@ -45,7 +45,7 @@ export default function Layout() {
               end={end}
               className={({ isActive }) =>
                 `relative flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                  isActive ? "text-white" : "hover:opacity-80"
+                  isActive ? "" : "hover:opacity-80"
                 }`
               }
               style={({ isActive }) => ({ color: isActive ? "var(--accent-contrast)" : "var(--text-secondary)" })}

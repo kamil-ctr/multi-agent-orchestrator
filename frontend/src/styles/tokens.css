@@ -1,0 +1,271 @@
+/* ==========================================================================
+   Design tokens — three layers, in dependency order:
+
+     1. PRIMITIVES   raw values (--paper-*, --ink-*, --agent-*-mark)
+     2. SEMANTIC     roles that point at primitives (--surface-*, --text-*)
+     3. INVARIANT    values that don't change between themes (type, space,
+                     radii, easing) — declared once in :root
+
+   Both :root and .dark restate every primitive and semantic literal-first.
+   CSS custom properties substitute at computed-value time, so a semantic
+   alias declared only in :root would freeze the light primitive and never
+   follow the theme swap. The duplication is deliberate.
+
+   Design position: SATURATED COLOR MEANS AGENT IDENTITY, NOTHING ELSE.
+   Chrome is achromatic warm ink. --accent therefore resolves to ink rather
+   than to a hue, so no part of the UI competes with the four agent colors.
+
+   Every ratio in the comments is measured against the theme's own surfaces
+   with the WCAG 2.1 relative-luminance formula.
+   ========================================================================== */
+
+:root {
+  color-scheme: light;
+
+  /* --- 1. primitives: ground ------------------------------------------ */
+  /* Warm paper, not neutral grey. This is what keeps light mode reading as
+     a printed timing sheet instead of as an afterthought to dark mode. */
+  --paper-0: #f2f0ea; /* page ground   */
+  --paper-1: #faf9f5; /* raised        */
+  --paper-2: #ffffff; /* card          */
+
+  --ink-0: #14130f; /* primary text   — 16.31:1 on paper-0 */
+  --ink-1: #55524a; /* secondary text —  6.85:1 on paper-0 */
+  --ink-2: #6e6a61; /* muted text     —  4.73:1 on paper-0 */
+
+  --rule: rgba(20, 19, 15, 0.1);
+  --rule-strong: #ddd9cf;
+
+  /* --- 1. primitives: agent identity ---------------------------------- */
+  /* Fixed categorical order, brand-faithful hues, never reassigned per view.
+     Three stops each so contrast holds wherever the hue is used:
+       -mark  fills, lanes, bars, avatars   >= 3:1 vs paper-0  (graphic)
+       -ink   scores, labels, any text      >= 4.5:1 vs paper-0 (text)
+       -on    foreground placed ON -mark    >= 4.5:1           (text)
+     Identity is still never color-alone — see api/agentMeta.js, which pairs
+     every hue with a label and an initial. */
+  --agent-gemini-mark: #2570ce; /* 4.30:1 vs paper-0 · white on it 4.90:1 */
+  --agent-gemini-ink: #1d5faf; /*  5.57:1 vs paper-0 */
+  --agent-gemini-on: var(--paper-2);
+
+  --agent-mistral-mark: #b57500; /* 3.34:1 vs paper-0 · ink on it 4.88:1 */
+  --agent-mistral-ink: #8a5a00; /*  5.20:1 vs paper-0 */
+  --agent-mistral-on: var(--ink-0);
+
+  --agent-cohere-mark: #d24e82; /*  3.58:1 vs paper-0 · ink on it 4.56:1 */
+  --agent-cohere-ink: #b23a69; /*   4.98:1 vs paper-0 */
+  --agent-cohere-on: var(--ink-0);
+
+  --agent-groq-mark: #d33736; /*    4.22:1 vs paper-0 · white on it 4.81:1 */
+  --agent-groq-ink: #c02f2e; /*     5.00:1 vs paper-0 */
+  --agent-groq-on: var(--paper-2);
+
+  /* --- 1. primitives: status ------------------------------------------ */
+  /* Never used inside an agent-colored surface: warning collides with
+     Mistral and critical with Groq. Terminal state inside a lane is carried
+     by mark treatment + glyph + label instead. */
+  --signal-good: #0e7a33; /* 4.79:1 vs paper-0 */
+  --signal-warning: #8a5a00; /* 5.20:1 */
+  --signal-serious: #b04a1b; /* 4.80:1 */
+  --signal-critical: #c02f2e; /* 5.00:1 */
+
+  /* --- 2. semantic: surfaces and text --------------------------------- */
+  --surface-0: var(--paper-0);
+  --surface-1: var(--paper-1);
+  --surface-2: var(--paper-2);
+  --text-primary: var(--ink-0);
+  --text-secondary: var(--ink-1);
+  --text-muted: var(--ink-2);
+  --border: var(--rule);
+  --border-strong: var(--rule-strong);
+
+  --status-good: var(--signal-good);
+  --status-warning: var(--signal-warning);
+  --status-serious: var(--signal-serious);
+  --status-critical: var(--signal-critical);
+
+  --agent-gemini: var(--agent-gemini-mark);
+  --agent-mistral: var(--agent-mistral-mark);
+  --agent-cohere: var(--agent-cohere-mark);
+  --agent-groq: var(--agent-groq-mark);
+
+  /* --- 2. semantic: chrome -------------------------------------------- */
+  /* Achromatic by design. Was --agent-gemini, which spent one competitor's
+     identity color on nav pills and send buttons. */
+  --accent: var(--ink-0);
+  --accent-hover: #33302a;
+  --accent-soft: rgba(20, 19, 15, 0.07);
+  --accent-contrast: var(--paper-1); /* 17.64:1 on --accent */
+
+  /* --- 2. semantic: elevation ----------------------------------------- */
+  /* Paper metaphor: a hairline plus a short, low-opacity drop. Nothing
+     glows. */
+  --elev-1: 0 1px 2px rgba(20, 19, 15, 0.06), 0 1px 1px rgba(20, 19, 15, 0.04);
+  --elev-2: 0 4px 12px rgba(20, 19, 15, 0.07), 0 1px 3px rgba(20, 19, 15, 0.05);
+  --elev-3: 0 12px 32px rgba(20, 19, 15, 0.1), 0 2px 6px rgba(20, 19, 15, 0.06);
+  --shadow-sm: var(--elev-1);
+  --shadow-md: var(--elev-2);
+
+  /* Two-tone ring: a paper spacer then an ink halo, so the indicator stays
+     visible on every ground including the ink-filled buttons themselves. */
+  --focus-ring: 0 0 0 2px var(--surface-0), 0 0 0 4px var(--ink-0);
+}
+
+.dark {
+  color-scheme: dark;
+
+  /* --- 1. primitives: ground ------------------------------------------ */
+  --paper-0: #0b0b0a;
+  --paper-1: #141413;
+  --paper-2: #1c1c1a;
+
+  --ink-0: #f6f4ee; /* 17.90:1 on paper-0 */
+  --ink-1: #bdb9ae; /* 10.05:1 */
+  --ink-2: #918c81; /*  5.88:1 */
+
+  --rule: rgba(246, 244, 238, 0.11);
+  --rule-strong: #302f2c;
+
+  /* --- 1. primitives: agent identity ---------------------------------- */
+  /* Lifted so every mark clears 5.7:1 against the darkest card surface;
+     -on flips to ink because all four marks are now light. */
+  --agent-gemini-mark: #4e9bf0; /* 6.82:1 vs paper-0 · ink on it 6.44:1 */
+  --agent-gemini-ink: #7db8f5; /*  9.42:1 */
+  --agent-gemini-on: var(--paper-0);
+
+  --agent-mistral-mark: #e8a22b; /* 9.03:1 · ink on it 8.53:1 */
+  --agent-mistral-ink: #e8a22b; /*  9.03:1 */
+  --agent-mistral-on: var(--paper-0);
+
+  --agent-cohere-mark: #f08ab2; /*  8.42:1 · ink on it 7.95:1 */
+  --agent-cohere-ink: #f49abf; /*   9.58:1 */
+  --agent-cohere-on: var(--paper-0);
+
+  --agent-groq-mark: #f26b6a; /*    6.64:1 · ink on it 6.27:1 */
+  --agent-groq-ink: #f58382; /*     7.92:1 */
+  --agent-groq-on: var(--paper-0);
+
+  /* --- 1. primitives: status ------------------------------------------ */
+  --signal-good: #4fc57a; /* 9.00:1 vs paper-0 */
+  --signal-warning: #e8a22b; /* 9.03:1 */
+  --signal-serious: #f0a077; /* 9.24:1 */
+  --signal-critical: #f58382; /* 7.92:1 */
+
+  /* --- 2. semantic: surfaces and text --------------------------------- */
+  --surface-0: var(--paper-0);
+  --surface-1: var(--paper-1);
+  --surface-2: var(--paper-2);
+  --text-primary: var(--ink-0);
+  --text-secondary: var(--ink-1);
+  --text-muted: var(--ink-2);
+  --border: var(--rule);
+  --border-strong: var(--rule-strong);
+
+  --status-good: var(--signal-good);
+  --status-warning: var(--signal-warning);
+  --status-serious: var(--signal-serious);
+  --status-critical: var(--signal-critical);
+
+  --agent-gemini: var(--agent-gemini-mark);
+  --agent-mistral: var(--agent-mistral-mark);
+  --agent-cohere: var(--agent-cohere-mark);
+  --agent-groq: var(--agent-groq-mark);
+
+  /* --- 2. semantic: chrome -------------------------------------------- */
+  --accent: var(--ink-0);
+  --accent-hover: #ffffff;
+  --accent-soft: rgba(246, 244, 238, 0.1);
+  --accent-contrast: var(--paper-0); /* 16.90:1 on --accent */
+
+  /* --- 2. semantic: elevation ----------------------------------------- */
+  /* Drop shadows barely read on near-black, so dark elevation leans on the
+     surface step and a 1px top highlight instead. */
+  --elev-1: 0 1px 2px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(246, 244, 238, 0.04);
+  --elev-2: 0 4px 14px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(246, 244, 238, 0.05);
+  --elev-3: 0 16px 40px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(246, 244, 238, 0.07);
+  --shadow-sm: var(--elev-1);
+  --shadow-md: var(--elev-2);
+
+  --focus-ring: 0 0 0 2px var(--surface-0), 0 0 0 4px var(--ink-0);
+}
+
+/* ==========================================================================
+   3. INVARIANT — identical in both themes, declared once.
+   ========================================================================== */
+
+:root {
+  /* --- type ------------------------------------------------------------
+     Display carries the race clock and headlines; body is the working face;
+     mono is reserved for anything measured — latency, tokens, deltas, cost. */
+  --font-display: "Space Grotesk Variable", "Space Grotesk", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans Variable", "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* Dense working range (11-16px) then a hard jump to display sizes — a
+     dashboard needs fine gradations where the data lives and none in
+     between the data and the headline. */
+  --text-2xs: 0.6875rem; /* 11 — lane meta, table micro-labels */
+  --text-xs: 0.75rem; /*    12 — captions, status */
+  --text-sm: 0.8125rem; /*  13 — table cells, secondary UI */
+  --text-base: 0.875rem; /* 14 — body copy */
+  --text-md: 1rem; /*       16 — emphasised body */
+  --text-lg: 1.25rem; /*    20 — section heads */
+  --text-xl: 1.75rem; /*    28 — page titles */
+  --text-2xl: 2.5rem; /*    40 — result headline */
+  --text-3xl: 3.5rem; /*    56 — race clock */
+
+  --leading-tight: 1.05;
+  --leading-snug: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.65;
+
+  --tracking-display: -0.02em;
+  --tracking-normal: 0;
+  --tracking-label: 0.08em; /* uppercase micro-labels only */
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  /* --- space — 4px base ------------------------------------------------ */
+  --space-0: 0;
+  --space-px: 1px;
+  --space-0-5: 0.125rem; /* 2  */
+  --space-1: 0.25rem; /*    4  */
+  --space-2: 0.5rem; /*     8  */
+  --space-3: 0.75rem; /*   12  */
+  --space-4: 1rem; /*      16  */
+  --space-5: 1.25rem; /*   20  */
+  --space-6: 1.5rem; /*    24  */
+  --space-8: 2rem; /*      32  */
+  --space-10: 2.5rem; /*   40  */
+  --space-12: 3rem; /*     48  */
+  --space-16: 4rem; /*     64  */
+
+  /* --- radii -----------------------------------------------------------
+     Tighter than the previous 16px-everywhere. radius-1 is for race lanes
+     specifically: a near-square bar reads as a measurement, a pill does not. */
+  --radius-1: 2px;
+  --radius-2: 4px;
+  --radius-3: 8px;
+  --radius-4: 12px;
+  --radius-5: 16px;
+  --radius-full: 9999px;
+
+  /* --- motion ----------------------------------------------------------
+     ease-lane is deliberately linear. A bar whose length encodes elapsed
+     time must not be eased — easing would make it misreport the data. */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-lane: linear;
+
+  --dur-1: 120ms; /* state flips, hover */
+  --dur-2: 200ms; /* small enter/exit */
+  --dur-3: 320ms; /* card, panel */
+  --dur-4: 480ms; /* result reveal */
+  --dur-5: 720ms; /* full page-load sequence budget */
+
+  --stagger: 60ms;
+}

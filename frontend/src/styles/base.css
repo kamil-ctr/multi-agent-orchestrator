@@ -1,0 +1,162 @@
+/* ==========================================================================
+   Base layer — element defaults, focus, scrollbars, and the reduced-motion
+   contract. Everything here reads tokens; no literal values.
+   ========================================================================== */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--surface-0);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  font-feature-settings: "cv05" 1; /* single-storey l — clearer next to 1 */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  letter-spacing: var(--tracking-display);
+  line-height: var(--leading-snug);
+  font-weight: var(--weight-semibold);
+  margin: 0;
+}
+
+code,
+kbd,
+samp,
+pre {
+  font-family: var(--font-mono);
+}
+
+/* Every measured value in this app — latency, tokens, scores, deltas, cost —
+   is monospaced with tabular figures so columns of numbers align and a
+   changing digit never shifts its neighbours. */
+.numeric {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "zero" 1; /* slashed zero */
+  letter-spacing: -0.01em;
+}
+
+/* Uppercase micro-label used for section heads and column headers. */
+.label {
+  font-family: var(--font-body);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* Visible keyboard focus on every interactive element. The two-tone ring
+   (surface spacer + ink halo) stays legible on light grounds, dark grounds,
+   and on top of the ink-filled buttons themselves. */
+:focus-visible {
+  outline: none;
+  border-radius: var(--radius-2);
+  box-shadow: var(--focus-ring);
+}
+
+/* Pointer affordance on everything that acts like a control. */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+a[href],
+summary,
+label[for] {
+  cursor: pointer;
+}
+
+/* Native form controls paint with the UA accent — an unmanaged blue that sits
+   outside the palette and competes directly with Gemini's mark. Claim it. */
+input[type="range"],
+input[type="checkbox"],
+input[type="radio"],
+progress {
+  accent-color: var(--accent);
+}
+
+input[type="range"] {
+  height: var(--space-4);
+  background: transparent;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: var(--radius-3);
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* --- motion ---------------------------------------------------------- */
+
+@keyframes pulse-soft {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+.animate-pulse-soft {
+  animation: pulse-soft 1.6s var(--ease-in-out) infinite;
+}
+
+@keyframes blink-cursor {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+.animate-blink-cursor {
+  animation: blink-cursor 1s step-end infinite;
+}
+
+/* --- reduced motion --------------------------------------------------- */
+/* Global brake first, then restore the state each looping animation was
+   carrying. Suppressing motion must not suppress meaning: a "running" agent
+   still has to look different from an idle one, and the stream cursor still
+   has to mark where text is arriving. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .animate-pulse-soft {
+    animation: none !important;
+    opacity: 0.65; /* held mid-pulse — still reads as "in progress" */
+  }
+
+  .animate-blink-cursor {
+    animation: none !important;
+    opacity: 1; /* held on — still marks the stream head */
+  }
+}

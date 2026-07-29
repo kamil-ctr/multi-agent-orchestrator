@@ -76,8 +76,11 @@ export default function SettingsPage() {
               style={{ background: settings.voiceAutoplay ? "var(--accent)" : "var(--border-strong)" }}
             >
               <span
-                className="absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform"
-                style={{ transform: settings.voiceAutoplay ? "translateX(22px)" : "translateX(2px)" }}
+                className="absolute top-0.5 h-5 w-5 rounded-full transition-transform"
+                style={{
+                        background: settings.voiceAutoplay ? "var(--accent-contrast)" : "var(--text-secondary)",
+                        transform: settings.voiceAutoplay ? "translateX(22px)" : "translateX(2px)",
+                      }}
               />
             </button>
           </div>
@@ -126,8 +129,11 @@ export default function SettingsPage() {
               style={{ background: settings.semanticCacheEnabled ? "var(--accent)" : "var(--border-strong)" }}
             >
               <span
-                className="absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform"
-                style={{ transform: settings.semanticCacheEnabled ? "translateX(22px)" : "translateX(2px)" }}
+                className="absolute top-0.5 h-5 w-5 rounded-full transition-transform"
+                style={{
+                        background: settings.semanticCacheEnabled ? "var(--accent-contrast)" : "var(--text-secondary)",
+                        transform: settings.semanticCacheEnabled ? "translateX(22px)" : "translateX(2px)",
+                      }}
               />
             </button>
           </div>
@@ -203,8 +209,11 @@ export default function SettingsPage() {
                     style={{ background: isOn ? "var(--accent)" : "var(--border-strong)" }}
                   >
                     <span
-                      className="absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform"
-                      style={{ transform: isOn ? "translateX(22px)" : "translateX(2px)" }}
+                      className="absolute top-0.5 h-5 w-5 rounded-full transition-transform"
+                      style={{
+                        background: isOn ? "var(--accent-contrast)" : "var(--text-secondary)",
+                        transform: isOn ? "translateX(22px)" : "translateX(2px)",
+                      }}
                     />
                   </button>
                 </div>

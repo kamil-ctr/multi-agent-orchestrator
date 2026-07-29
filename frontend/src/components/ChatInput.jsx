@@ -156,7 +156,9 @@ export default function ChatInput({ onSubmit, disabled, prefill, prefillKey }) {
             title={listening ? "Stop listening" : "Speak your prompt"}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors hover:opacity-80 disabled:opacity-40"
             style={{
-              color: listening ? "#fff" : "var(--text-secondary)",
+              // --status-critical is light in dark theme, so the "listening"
+              // foreground has to be the page ground, not a hardcoded white.
+              color: listening ? "var(--surface-0)" : "var(--text-secondary)",
               background: listening ? "var(--status-critical)" : "transparent",
             }}
           >
@@ -180,8 +182,8 @@ export default function ChatInput({ onSubmit, disabled, prefill, prefillKey }) {
           type="button"
           onClick={submit}
           disabled={disabled || uploading || (!text.trim() && !attachment)}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white transition-all hover:brightness-110 disabled:opacity-30 disabled:hover:brightness-100"
-          style={{ background: "var(--accent)" }}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-opacity hover:opacity-85 disabled:opacity-30 disabled:hover:opacity-30"
+          style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}
         >
           {uploading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
         </button>
