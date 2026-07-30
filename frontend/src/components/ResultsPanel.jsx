@@ -97,29 +97,20 @@ export default function ResultsPanel({ result, historyId, reveal = false }) {
 
   return (
     <div className="flex flex-col gap-5" ref={rootRef}>
-      <div
-        data-gsap="reveal-card"
-        className="rounded-2xl border p-5"
-        style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}
-      >
+      <div data-gsap="reveal-card" className="p-5" style={{ background: "var(--surface-1)" }}>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div data-gsap="reveal-answer" className="min-w-0 flex-1">
-            <div className="mb-2 flex items-center gap-2">
-              <h2 className="text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
-                Synthesized Answer
-              </h2>
+            <div className="mb-2 flex items-center gap-3">
+              <h2 className="label">Synthesized Answer</h2>
               {result.cache_hit === "exact" && (
-                <span
-                  className="flex items-center gap-1 rounded-full px-2 py-0.5 text-xs"
-                  style={{ background: "var(--surface-1)", color: "var(--text-muted)" }}
-                >
+                <span className="flex items-center gap-1 text-xs" style={{ color: "var(--text-muted)" }}>
                   <Zap size={11} /> Cached (exact match)
                 </span>
               )}
               {result.cache_hit === "semantic" && (
                 <span
-                  className="flex items-center gap-1 rounded-full px-2 py-0.5 text-xs"
-                  style={{ background: "var(--surface-1)", color: "var(--text-muted)" }}
+                  className="flex items-center gap-1 text-xs"
+                  style={{ color: "var(--text-muted)" }}
                   title="Matched a previously-asked, differently-worded question"
                 >
                   <Zap size={11} /> Semantic cache hit ({result.cache_similarity?.toFixed(2)} similarity)
@@ -128,8 +119,8 @@ export default function ResultsPanel({ result, historyId, reveal = false }) {
               {supported && (
                 <button
                   onClick={handleSpeak}
-                  className="ml-auto flex items-center gap-1 rounded-full px-2 py-0.5 text-xs transition-colors hover:opacity-80 sm:ml-0"
-                  style={{ background: "var(--surface-1)", color: "var(--text-secondary)" }}
+                  className="ml-auto flex items-center gap-1 text-xs opacity-70 transition-opacity duration-[var(--duration-base)] ease-vivid hover:opacity-100 sm:ml-0"
+                  style={{ color: "var(--text-secondary)" }}
                 >
                   {speaking ? <VolumeX size={13} /> : <Volume2 size={13} />}
                   {speaking ? "Stop" : "Listen"}
@@ -145,7 +136,7 @@ export default function ResultsPanel({ result, historyId, reveal = false }) {
                 {Object.entries(result.attribution).map(([agent, note]) => (
                   <span
                     key={agent}
-                    className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs"
+                    className="inline-flex items-center gap-1.5 border px-2.5 py-1 text-xs"
                     style={{ borderColor: agentColor(agent), color: "var(--text-secondary)" }}
                   >
                     <span className="h-1.5 w-1.5 rounded-full" style={{ background: agentColor(agent) }} />
@@ -186,17 +177,13 @@ export default function ResultsPanel({ result, historyId, reveal = false }) {
       </div>
 
       <div data-gsap="reveal-comparison">
-        <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
-          Comparison
-        </h3>
+        <h3 className="label mb-2">Comparison</h3>
         <ComparisonTable rows={tableRows} />
       </div>
 
       <div data-gsap="reveal-responses">
-        <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
-          Individual Responses
-        </h3>
-        <div className="flex flex-col gap-2">
+        <h3 className="label mb-2">Individual Responses</h3>
+        <div className="flex flex-col">
           {orderedResponses.map((r) => (
             <AgentResponseCard key={r.agent} response={r} evaluation={evalByAgent[r.agent]} />
           ))}

@@ -21,33 +21,30 @@ export default function ExplainabilityPanel({ explanation }) {
   if (!explanation) return null;
 
   return (
-    <div className="mt-3 border-t pt-3" style={{ borderColor: "var(--border)" }}>
+    <div className="mt-3 border-t pt-3" style={{ borderColor: "var(--border-strong)" }}>
       <button
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="flex items-center gap-1.5 text-xs font-medium transition-colors hover:opacity-80"
-        style={{ color: "var(--accent)" }}
+        className="flex items-center gap-1.5 text-xs opacity-70 transition-opacity duration-[var(--duration-base)] ease-vivid hover:opacity-100"
+        style={{ color: "var(--text-primary)" }}
       >
         <Lightbulb size={13} />
         Why this synthesis?
         <ChevronDown
           size={13}
-          style={{ transform: open ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}
+          style={{ transform: open ? "rotate(180deg)" : "none", transition: "transform var(--duration-base) var(--ease-vivid)" }}
         />
       </button>
 
       {open && (
-        <div
-          className="mt-2 flex flex-col gap-2 rounded-3 border p-3 text-xs leading-relaxed"
-          style={{ background: "var(--accent-soft)", borderColor: "var(--border)", color: "var(--text-secondary)" }}
-        >
+        <div className="mt-2 flex flex-col gap-2 border-t pt-2 text-base" style={{ borderColor: "var(--border)" }}>
           <p style={{ color: "var(--text-primary)" }}>{explanation.summary}</p>
           {explanation.key_differentiators?.length > 0 && (
-            <ul className="ml-4 list-disc space-y-1">
+            <ol className="ml-4 list-decimal space-y-1" style={{ color: "var(--text-primary)" }}>
               {explanation.key_differentiators.map((d, i) => (
                 <li key={i}>{d}</li>
               ))}
-            </ul>
+            </ol>
           )}
         </div>
       )}

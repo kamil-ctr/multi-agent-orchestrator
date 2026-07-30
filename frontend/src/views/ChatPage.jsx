@@ -310,7 +310,7 @@ export default function ChatPage() {
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6 sm:px-8" style={{ background: "var(--surface-1)" }}>
+        <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6 sm:px-8">
           <div className="mx-auto flex max-w-4xl flex-col gap-8">
             {isEmpty && (
               <div className="flex flex-1 flex-col items-center justify-center gap-3 py-24 text-center">
