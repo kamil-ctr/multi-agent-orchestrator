@@ -6,8 +6,11 @@ import ResultsPanel from "./ResultsPanel";
 /**
  * One conversation turn: the user's prompt bubble (with attachment chip, if
  * any) plus the assistant-side response, which renders as one of three
- * states depending on `turn.status` — a live PrismRace while running, a
- * ResultsPanel once synthesis completes, or an inline error.
+ * states depending on `turn.status` — a "racing" placeholder while running
+ * (the live PrismRace itself is a fixed fixture below the composer in
+ * ChatPage, not repeated per-message), a ResultsPanel once synthesis
+ * completes, or an inline error (with the frozen per-turn race, since that
+ * historical detail only exists here).
  *
  * @param {Object} props
  * @param {Object} props.turn - One entry from ChatPage's `turns` state:
@@ -21,7 +24,7 @@ export default function ChatMessage({ turn }) {
         <div className="flex max-w-2xl flex-col items-end gap-2">
           {turn.attachment && (
             <div
-              className="flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs"
+              className="flex items-center gap-2 border px-3 py-1.5 text-xs"
               style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}
             >
               {turn.attachment.kind === "image" ? (
@@ -39,8 +42,8 @@ export default function ChatMessage({ turn }) {
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            className="rounded-4 rounded-tr-1 px-4 py-2.5 text-sm shadow-[var(--elev-1)]"
-            style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}
+            className="rounded-2 border px-4 py-2.5 text-sm"
+            style={{ borderColor: "var(--border-strong)", background: "var(--surface-2)", color: "var(--text-primary)" }}
           >
             {turn.prompt}
           </motion.div>
@@ -56,7 +59,11 @@ export default function ChatMessage({ turn }) {
             <Bot size={15} />
           </div>
           <div className="min-w-0 flex-1">
-            {turn.status === "running" && <PrismRace agentStates={turn.agentStates} />}
+            {turn.status === "running" && (
+              <span className="numeric animate-pulse-soft text-xs" style={{ color: "var(--text-muted)" }}>
+                Racing {Object.keys(turn.agentStates || {}).length} agents…
+              </span>
+            )}
             {turn.status === "done" && turn.result && (
               <ResultsPanel result={turn.result} historyId={turn.historyId} reveal={!turn.historical} />
             )}
@@ -69,7 +76,7 @@ export default function ChatMessage({ turn }) {
                     in place instead of spinning forever" means for this view. */}
                 {Object.keys(turn.agentStates || {}).length > 0 && <PrismRace agentStates={turn.agentStates} />}
                 <div
-                  className="flex items-center gap-2 rounded-xl border px-4 py-3 text-sm"
+                  className="flex items-center gap-2 border px-4 py-3 text-sm"
                   style={{ borderColor: "var(--status-critical)", color: "var(--status-critical)" }}
                 >
                   <AlertCircle size={16} />

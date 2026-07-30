@@ -1,7 +1,5 @@
 import { NavLink, Outlet } from "react-router-dom";
-import { motion } from "framer-motion";
-import { MessageSquare, Trophy, Settings, Sun, Moon, Bot } from "lucide-react";
-import { useTheme } from "../context/ThemeContext";
+import { MessageSquare, Trophy, Settings } from "lucide-react";
 
 const navItems = [
   { to: "/", label: "Chat", icon: MessageSquare, end: true },
@@ -10,72 +8,42 @@ const navItems = [
 ];
 
 /**
- * App shell: top nav bar (logo, Chat/Leaderboard/Settings tabs, theme
- * toggle) plus a react-router `<Outlet />` for the active page.
+ * App shell: top nav bar (wordmark, Chat/Leaderboard/Settings tabs) plus a
+ * react-router `<Outlet />` for the active page.
  *
- * Takes no props — reads/writes theme via useTheme and renders whichever
- * route matched in App.jsx's <Routes>.
+ * Chrome carries no fill and no border — identity is opacity (active vs
+ * inactive) on plain text/icons over the obsidian canvas, not a colored
+ * pill. Dark is the only theme now, so there's no toggle here anymore.
  *
  * @returns {JSX.Element}
  */
 export default function Layout() {
-  const { theme, toggleTheme } = useTheme();
-
   return (
     <div className="flex h-screen flex-col" style={{ background: "var(--surface-0)" }}>
-      <header
-        className="flex shrink-0 items-center justify-between border-b px-4 py-2.5 shadow-[var(--shadow-sm)]"
-        style={{ borderColor: "var(--border)", background: "var(--surface-1)" }}
-      >
-        <div className="flex items-center gap-2 font-semibold" style={{ color: "var(--text-primary)" }}>
-          <span
-            className="flex h-7 w-7 items-center justify-center rounded-lg"
-            style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
-          >
-            <Bot size={17} />
-          </span>
-          <span className="hidden sm:inline">Multi-Agent Orchestrator</span>
-        </div>
+      <header className="flex shrink-0 items-center justify-between px-4 py-3" style={{ background: "var(--surface-0)" }}>
+        <span
+          className="text-2xs uppercase"
+          style={{ color: "var(--text-muted)", letterSpacing: "var(--tracking-label)" }}
+        >
+          Orchestrator
+        </span>
 
-        <nav className="flex items-center gap-1 rounded-lg p-1" style={{ background: "var(--surface-2)" }}>
+        <nav className="flex items-center gap-6">
           {navItems.map(({ to, label, icon: Icon, end }) => (
             <NavLink
               key={to}
               to={to}
               end={end}
               className={({ isActive }) =>
-                `relative flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                  isActive ? "" : "hover:opacity-80"
-                }`
+                `flex items-center gap-1.5 text-2xs uppercase no-underline ${isActive ? "opacity-100" : "opacity-60"}`
               }
-              style={({ isActive }) => ({ color: isActive ? "var(--accent-contrast)" : "var(--text-secondary)" })}
+              style={{ color: "var(--text-primary)", letterSpacing: "var(--tracking-label)" }}
             >
-              {({ isActive }) => (
-                <>
-                  {isActive && (
-                    <motion.span
-                      layoutId="nav-active-pill"
-                      className="absolute inset-0 rounded-md"
-                      style={{ background: "var(--accent)" }}
-                      transition={{ type: "spring", stiffness: 500, damping: 35 }}
-                    />
-                  )}
-                  <Icon size={15} className="relative" />
-                  <span className="relative hidden md:inline">{label}</span>
-                </>
-              )}
+              <Icon size={14} />
+              <span className="hidden sm:inline">{label}</span>
             </NavLink>
           ))}
         </nav>
-
-        <button
-          onClick={toggleTheme}
-          aria-label="Toggle theme"
-          className="flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:opacity-80"
-          style={{ background: "var(--surface-2)", color: "var(--text-secondary)" }}
-        >
-          {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
-        </button>
       </header>
 
       <main className="min-h-0 flex-1">

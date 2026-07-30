@@ -6,6 +6,7 @@ import { Sparkles, Scale, Code2, GitCompareArrows, TriangleAlert } from "lucide-
 import ChatInput from "../components/ChatInput";
 import ChatMessage from "../components/ChatMessage";
 import ConversationSidebar from "../components/ConversationSidebar";
+import PrismRace from "../components/PrismRace";
 import {
   createConversation,
   fetchAgents,
@@ -287,6 +288,16 @@ export default function ChatPage() {
   const noAgentsEnabled =
     availableAgents.length > 0 && availableAgents.every((n) => settings.disabledAgents.includes(n));
 
+  // PrismRace is a fixed fixture below the composer, not something that
+  // pops in per-message — it's the one place the "prism" happens. Only one
+  // turn can ever be running at a time (the composer is disabled while
+  // busy), so there's always at most one live race to show; between
+  // queries it idles on empty tracks for whichever agents would actually
+  // run next.
+  const runningTurn = turns.find((t) => t.status === "running");
+  const enabledAgents = availableAgents.filter((n) => !settings.disabledAgents.includes(n));
+  const raceAgentStates = runningTurn ? runningTurn.agentStates : seedAgentStates(enabledAgents);
+
   return (
     <div className="flex h-full min-h-0" ref={pageRef}>
       <ConversationSidebar
@@ -299,15 +310,11 @@ export default function ChatPage() {
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6 sm:px-8">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6 sm:px-8" style={{ background: "var(--surface-1)" }}>
           <div className="mx-auto flex max-w-4xl flex-col gap-8">
             {isEmpty && (
               <div className="flex flex-1 flex-col items-center justify-center gap-3 py-24 text-center">
-                <span
-                  data-gsap="hero-icon"
-                  className="flex h-14 w-14 items-center justify-center rounded-2xl"
-                  style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
-                >
+                <span data-gsap="hero-icon" style={{ color: "var(--text-muted)" }}>
                   <Sparkles size={26} />
                 </span>
                 <h1 data-gsap="hero-heading" className="text-xl font-semibold" style={{ color: "var(--text-primary)" }}>
@@ -323,10 +330,10 @@ export default function ChatPage() {
                       key={text}
                       data-gsap="hero-chip"
                       onClick={() => handleSuggestion(text)}
-                      className="flex items-center gap-2 rounded-full border px-3.5 py-2 text-left text-xs font-medium transition-colors hover:opacity-80"
-                      style={{ borderColor: "var(--border)", background: "var(--surface-2)", color: "var(--text-secondary)" }}
+                      className="flex items-center gap-2 border px-3.5 py-2 text-left text-xs opacity-80 transition-opacity duration-[var(--duration-base)] ease-vivid hover:opacity-100"
+                      style={{ borderColor: "var(--border-strong)", color: "var(--text-secondary)" }}
                     >
-                      <Icon size={13} style={{ color: "var(--accent)" }} />
+                      <Icon size={13} style={{ color: "var(--text-muted)" }} />
                       {text}
                     </button>
                   ))}
@@ -339,11 +346,11 @@ export default function ChatPage() {
           </div>
         </div>
 
-        <div className="border-t px-4 py-4 sm:px-8" style={{ borderColor: "var(--border)", background: "var(--surface-0)" }}>
-          <div data-gsap="input-bar" className="mx-auto max-w-4xl">
+        <div className="px-4 py-4 sm:px-8" style={{ background: "var(--surface-0)" }}>
+          <div data-gsap="input-bar" className="mx-auto flex max-w-4xl flex-col gap-3">
             {noAgentsEnabled && (
               <div
-                className="mb-3 flex items-center gap-2 rounded-2 border px-3 py-2 text-xs"
+                className="flex items-center gap-2 border px-3 py-2 text-xs"
                 style={{ borderColor: "var(--status-warning)", color: "var(--status-warning)" }}
               >
                 <TriangleAlert size={13} className="shrink-0" />
@@ -359,6 +366,7 @@ export default function ChatPage() {
               prefill={prefill}
               prefillKey={prefillKey}
             />
+            <PrismRace agentStates={raceAgentStates} />
           </div>
         </div>
       </div>

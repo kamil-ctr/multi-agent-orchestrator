@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Paperclip, Mic, Camera, Send, X, Loader2, FileText, Square } from "lucide-react";
+import { Paperclip, Mic, Camera, X, Loader2, FileText, Square } from "lucide-react";
 import { uploadFile } from "../api/client";
 import { useSpeechToText } from "../hooks/useVoice";
 
@@ -91,7 +91,7 @@ export default function ChatInput({ onSubmit, disabled, prefill, prefillKey }) {
 
       {attachment && (
         <div
-          className="flex items-center gap-2 self-start rounded-lg border px-3 py-2 text-sm"
+          className="flex items-center gap-2 self-start border px-3 py-2 text-sm"
           style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}
         >
           {attachment.kind === "image" ? (
@@ -120,8 +120,8 @@ export default function ChatInput({ onSubmit, disabled, prefill, prefillKey }) {
       )}
 
       <div
-        className="flex items-end gap-2 rounded-2xl border p-2 shadow-[var(--shadow-sm)] transition-shadow focus-within:shadow-[var(--shadow-md)]"
-        style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}
+        className="flex w-full items-end gap-2 border p-2"
+        style={{ borderColor: "var(--border-strong)", background: "var(--surface-2)" }}
       >
         <input ref={fileInputRef} type="file" accept={FILE_ACCEPT} className="hidden" onChange={handlePick} />
         <input ref={imageInputRef} type="file" accept={IMAGE_ACCEPT} className="hidden" onChange={handlePick} />
@@ -131,7 +131,7 @@ export default function ChatInput({ onSubmit, disabled, prefill, prefillKey }) {
           onClick={() => fileInputRef.current?.click()}
           disabled={disabled || uploading}
           title="Attach a document"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors hover:opacity-80 disabled:opacity-40"
+          className="flex h-9 w-9 shrink-0 items-center justify-center opacity-70 transition-opacity duration-[var(--duration-base)] ease-vivid hover:opacity-100 disabled:opacity-40"
           style={{ color: "var(--text-secondary)" }}
         >
           <Paperclip size={18} />
@@ -142,7 +142,7 @@ export default function ChatInput({ onSubmit, disabled, prefill, prefillKey }) {
           onClick={() => imageInputRef.current?.click()}
           disabled={disabled || uploading}
           title="Attach an image"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors hover:opacity-80 disabled:opacity-40"
+          className="flex h-9 w-9 shrink-0 items-center justify-center opacity-70 transition-opacity duration-[var(--duration-base)] ease-vivid hover:opacity-100 disabled:opacity-40"
           style={{ color: "var(--text-secondary)" }}
         >
           <Camera size={18} />
@@ -154,12 +154,10 @@ export default function ChatInput({ onSubmit, disabled, prefill, prefillKey }) {
             onClick={() => (listening ? stop() : start())}
             disabled={disabled}
             title={listening ? "Stop listening" : "Speak your prompt"}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors hover:opacity-80 disabled:opacity-40"
+            className={`flex h-9 w-9 shrink-0 items-center justify-center border transition-opacity duration-[var(--duration-base)] ease-vivid hover:opacity-100 disabled:opacity-40 ${listening ? "opacity-100" : "opacity-70"}`}
             style={{
-              // --status-critical is light in dark theme, so the "listening"
-              // foreground has to be the page ground, not a hardcoded white.
-              color: listening ? "var(--surface-0)" : "var(--text-secondary)",
-              background: listening ? "var(--status-critical)" : "transparent",
+              color: listening ? "var(--status-critical)" : "var(--text-secondary)",
+              borderColor: listening ? "var(--status-critical)" : "transparent",
             }}
           >
             {listening ? <Square size={14} /> : <Mic size={18} />}
@@ -174,7 +172,7 @@ export default function ChatInput({ onSubmit, disabled, prefill, prefillKey }) {
           placeholder={listening ? "Listening..." : "Ask all agents anything..."}
           rows={1}
           disabled={disabled}
-          className="max-h-40 min-h-[36px] flex-1 resize-none bg-transparent px-1 py-1.5 text-sm outline-none"
+          className="max-h-40 min-h-[36px] flex-1 resize-none bg-transparent px-1 py-1.5 text-sm outline-none placeholder:text-[var(--text-muted)]"
           style={{ color: "var(--text-primary)" }}
         />
 
@@ -182,10 +180,16 @@ export default function ChatInput({ onSubmit, disabled, prefill, prefillKey }) {
           type="button"
           onClick={submit}
           disabled={disabled || uploading || (!text.trim() && !attachment)}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-opacity hover:opacity-85 disabled:opacity-30 disabled:hover:opacity-30"
-          style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}
+          className="flex h-9 shrink-0 items-center justify-center gap-1.5 border px-3.5 opacity-60 transition-opacity duration-[var(--duration-base)] ease-vivid hover:opacity-100 disabled:opacity-30 disabled:hover:opacity-30"
+          style={{ borderColor: "var(--text-primary)", color: "var(--text-primary)" }}
         >
-          {uploading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+          {uploading ? (
+            <Loader2 size={14} className="animate-spin" />
+          ) : (
+            <span className="text-2xs uppercase" style={{ letterSpacing: "var(--tracking-label)" }}>
+              Run
+            </span>
+          )}
         </button>
       </div>
     </div>
