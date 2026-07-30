@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid, LabelList } from "recharts";
-import { Trophy, Crown, TriangleAlert } from "lucide-react";
+import { Crown, TriangleAlert } from "lucide-react";
 import { fetchLeaderboard } from "../api/client";
-import { agentColor, agentInk, agentLabel } from "../api/agentMeta";
-import AgentAvatar from "../components/AgentAvatar";
+import { agentColor, agentInitial, agentLabel } from "../api/agentMeta";
 import Skeleton from "../components/Skeleton";
 
 const QUERY_TYPES = [
@@ -15,12 +14,21 @@ const QUERY_TYPES = [
   { value: "conversational", label: "Conversational" },
 ];
 
+function AgentLabel({ agent }) {
+  const color = agentColor(agent);
+  return (
+    <span className="text-2xs uppercase" style={{ color, letterSpacing: "var(--tracking-label)" }}>
+      {agentInitial(agent)} {agentLabel(agent)}
+    </span>
+  );
+}
+
 function ChartTooltip({ active, payload }) {
   if (!active || !payload?.length) return null;
   const row = payload[0].payload;
   return (
-    <div className="rounded-lg border px-3 py-2 text-xs shadow-[var(--elev-2)]" style={{ background: "var(--surface-2)", borderColor: "var(--border)" }}>
-      <div className="mb-1 font-semibold" style={{ color: "var(--text-primary)" }}>
+    <div className="border px-3 py-2 text-xs" style={{ background: "var(--surface-2)", borderColor: "var(--border-strong)" }}>
+      <div className="mb-1" style={{ color: "var(--text-primary)" }}>
         {agentLabel(row.agent)}
       </div>
       <div className="numeric" style={{ color: "var(--text-secondary)" }}>avg score: {row.avg_score?.toFixed(2) ?? "—"}/10</div>
@@ -68,33 +76,45 @@ export default function LeaderboardPage() {
   }, [rows]);
 
   return (
-    <div className="mx-auto flex h-full max-w-5xl flex-col gap-6 overflow-y-auto px-4 py-8 sm:px-8">
-      <div className="flex items-center gap-2">
-        <Trophy size={22} style={{ color: "var(--accent)" }} />
-        <h1 className="text-xl font-semibold" style={{ color: "var(--text-primary)" }}>
-          Agent Leaderboard
-        </h1>
-      </div>
+    <div
+      className="mx-auto flex h-full max-w-5xl flex-col gap-6 overflow-y-auto px-4 py-8 sm:px-8"
+      style={{ background: "var(--surface-0)" }}
+    >
+      <h1
+        className="uppercase"
+        style={{
+          fontSize: "var(--text-xl)",
+          fontWeight: "var(--weight-regular)",
+          letterSpacing: "var(--tracking-heading)",
+          color: "var(--text-primary)",
+        }}
+      >
+        Leaderboard
+      </h1>
 
-      <div className="flex flex-wrap gap-1.5">
-        {QUERY_TYPES.map((qt) => (
-          <button
-            key={qt.label}
-            onClick={() => setQueryType(qt.value)}
-            className="rounded-full px-3 py-1.5 text-xs font-medium transition-colors"
-            style={{
-              background: queryType === qt.value ? "var(--accent)" : "var(--surface-2)",
-              color: queryType === qt.value ? "var(--accent-contrast)" : "var(--text-secondary)",
-            }}
-          >
-            {qt.label}
-          </button>
-        ))}
+      <div className="flex flex-wrap gap-2">
+        {QUERY_TYPES.map((qt) => {
+          const active = queryType === qt.value;
+          return (
+            <button
+              key={qt.label}
+              onClick={() => setQueryType(qt.value)}
+              className="border px-3 py-1.5 text-xs transition-opacity duration-[var(--duration-base)] ease-vivid hover:opacity-100"
+              style={{
+                borderColor: "var(--border-strong)",
+                color: "var(--text-primary)",
+                opacity: active ? 1 : 0.6,
+              }}
+            >
+              {qt.label}
+            </button>
+          );
+        })}
       </div>
 
       {loading && (
         <>
-          <div className="rounded-3 border p-5" style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}>
+          <div className="border p-5" style={{ borderColor: "var(--border-strong)" }}>
             <div className="flex items-center gap-4">
               <Skeleton className="h-11 w-11 rounded-full" />
               <div className="flex flex-1 flex-col gap-2">
@@ -103,7 +123,7 @@ export default function LeaderboardPage() {
               </div>
             </div>
           </div>
-          <div className="rounded-3 border p-4" style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}>
+          <div className="border p-4" style={{ borderColor: "var(--border-strong)" }}>
             <div className="flex h-[280px] items-end justify-around gap-4 px-4">
               {[0.85, 0.65, 0.55, 0.4].map((h, i) => (
                 <Skeleton key={i} className="w-full" style={{ height: `${h * 100}%` }} />
@@ -114,15 +134,16 @@ export default function LeaderboardPage() {
       )}
 
       {!loading && loadError && (
-        <div
-          className="flex flex-col items-center gap-2 rounded-xl border py-12 text-center"
-          style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}
-        >
+        <div className="flex flex-col items-center gap-2 border py-12 text-center" style={{ borderColor: "var(--border-strong)" }}>
           <TriangleAlert size={20} style={{ color: "var(--text-muted)" }} />
           <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
             Couldn't load the leaderboard — check that the backend is running.
           </p>
-          <button onClick={load} className="text-xs font-medium hover:opacity-80" style={{ color: "var(--accent)" }}>
+          <button
+            onClick={load}
+            className="text-xs opacity-70 transition-opacity duration-[var(--duration-base)] ease-vivid hover:opacity-100"
+            style={{ color: "var(--text-primary)" }}
+          >
             Retry
           </button>
         </div>
@@ -137,11 +158,7 @@ export default function LeaderboardPage() {
       {!loading && !loadError && rows.length > 0 && (
         <>
           {leader && (
-            <div
-              className="flex items-center gap-4 rounded-3 border p-5"
-              style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}
-            >
-              <AgentAvatar name={leader.agent} size={44} />
+            <div className="flex items-center gap-4 border p-5" style={{ borderColor: "var(--border-strong)" }}>
               <div className="min-w-0 flex-1">
                 <div className="label">
                   Current leader
@@ -149,7 +166,12 @@ export default function LeaderboardPage() {
                 </div>
                 <div className="flex items-baseline gap-2">
                   <span
-                    style={{ fontFamily: "var(--font-display)", fontSize: "var(--text-xl)", color: agentInk(leader.agent), letterSpacing: "var(--tracking-display)" }}
+                    style={{
+                      fontFamily: "var(--font-display)",
+                      fontSize: "var(--text-xl)",
+                      color: agentColor(leader.agent),
+                      letterSpacing: "var(--tracking-heading)",
+                    }}
                   >
                     {agentLabel(leader.agent)}
                   </span>
@@ -158,13 +180,13 @@ export default function LeaderboardPage() {
               </div>
               <div className="flex shrink-0 gap-6 text-right">
                 <div>
-                  <div className="numeric text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
+                  <div className="numeric text-lg" style={{ color: "var(--text-primary)" }}>
                     {leader.avg_score.toFixed(2)}
                   </div>
                   <div className="label">avg score</div>
                 </div>
                 <div>
-                  <div className="numeric text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
+                  <div className="numeric text-lg" style={{ color: "var(--text-primary)" }}>
                     {(leader.success_rate * 100).toFixed(0)}%
                   </div>
                   <div className="label">success</div>
@@ -173,7 +195,7 @@ export default function LeaderboardPage() {
             </div>
           )}
 
-          <div className="rounded-3 border p-4" style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}>
+          <div className="border p-4" style={{ borderColor: "var(--border-strong)" }}>
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={chartData} margin={{ top: 20, right: 8, left: 0, bottom: 8 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border-strong)" vertical={false} />
@@ -191,7 +213,7 @@ export default function LeaderboardPage() {
                   tickLine={false}
                 />
                 <Tooltip content={<ChartTooltip />} cursor={{ fill: "var(--surface-1)" }} />
-                <Bar dataKey="avg_score_display" radius={[2, 2, 0, 0]} maxBarSize={40}>
+                <Bar dataKey="avg_score_display" radius={0} maxBarSize={40}>
                   {chartData.map((row) => (
                     <Cell key={row.agent} fill={agentColor(row.agent)} />
                   ))}
@@ -201,10 +223,10 @@ export default function LeaderboardPage() {
             </ResponsiveContainer>
           </div>
 
-          <div className="overflow-x-auto rounded-xl border" style={{ borderColor: "var(--border)" }}>
+          <div className="overflow-x-auto border" style={{ borderColor: "var(--border-strong)" }}>
             <table className="w-full min-w-[600px] text-left text-sm">
               <thead>
-                <tr style={{ background: "var(--surface-2)" }}>
+                <tr className="border-b" style={{ borderColor: "var(--border-strong)" }}>
                   {["Rank", "Agent", "Avg Score", "Avg Latency", "Success Rate", "Runs"].map((h) => (
                     <th key={h} className="label px-3 py-2">
                       {h}
@@ -216,20 +238,18 @@ export default function LeaderboardPage() {
                 {rows.map((row, i) => (
                   <tr
                     key={row.agent}
-                    className="border-t"
                     style={{
-                      borderColor: "var(--border)",
-                      background: i === 0 ? "var(--accent-soft)" : "transparent",
-                      boxShadow: i === 0 ? `inset 3px 0 0 0 ${agentColor(row.agent)}` : "none",
+                      borderTop: i > 0 ? "1px solid var(--border-strong)" : "none",
+                      borderLeft: i === 0 ? `1px solid ${agentColor(row.agent)}` : "1px solid transparent",
                     }}
                   >
                     <td className="numeric px-3 py-2" style={{ color: "var(--text-muted)" }}>
                       {i + 1}
                     </td>
                     <td className="px-3 py-2">
-                      <AgentAvatar name={row.agent} size={22} showLabel />
+                      <AgentLabel agent={row.agent} />
                     </td>
-                    <td className="numeric px-3 py-2" style={{ color: "var(--text-primary)", fontWeight: i === 0 ? 600 : 400 }}>
+                    <td className="numeric px-3 py-2" style={{ color: "var(--text-primary)" }}>
                       {row.avg_score != null ? row.avg_score.toFixed(2) : "—"}
                     </td>
                     <td className="numeric px-3 py-2" style={{ color: "var(--text-secondary)" }}>
@@ -237,9 +257,9 @@ export default function LeaderboardPage() {
                     </td>
                     <td className="px-3 py-2">
                       <div className="flex items-center gap-2">
-                        <div className="h-2 w-16 shrink-0 overflow-hidden rounded-1" style={{ background: "var(--border-strong)" }}>
+                        <div className="h-1 w-16 shrink-0" style={{ background: "var(--surface-2)" }}>
                           <div
-                            className="h-full rounded-1"
+                            className="h-full"
                             style={{ width: `${row.success_rate * 100}%`, background: agentColor(row.agent) }}
                           />
                         </div>

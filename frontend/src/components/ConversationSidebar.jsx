@@ -111,8 +111,8 @@ export default function ConversationSidebar({ collapsed, onToggle, activeId, onS
       <button
         data-gsap="sidebar"
         onClick={onToggle}
-        className="flex w-9 shrink-0 flex-col items-center gap-2 border-r py-3"
-        style={{ borderColor: "var(--border)", background: "var(--surface-1)" }}
+        className="flex w-9 shrink-0 flex-col items-center gap-2 py-3"
+        style={{ background: "var(--surface-1)" }}
         title="Show conversations"
       >
         <ChevronRight size={16} style={{ color: "var(--text-muted)" }} />
@@ -122,15 +122,9 @@ export default function ConversationSidebar({ collapsed, onToggle, activeId, onS
   }
 
   return (
-    <aside
-      data-gsap="sidebar"
-      className="flex w-72 shrink-0 flex-col border-r"
-      style={{ borderColor: "var(--border)", background: "var(--surface-1)" }}
-    >
-      <div className="flex items-center justify-between gap-2 border-b p-3" style={{ borderColor: "var(--border)" }}>
-        <span className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-          History
-        </span>
+    <aside data-gsap="sidebar" className="flex w-72 shrink-0 flex-col" style={{ background: "var(--surface-1)" }}>
+      <div className="flex items-center justify-between gap-2 border-b p-3" style={{ borderColor: "var(--border-strong)" }}>
+        <span className="label">History</span>
         <button onClick={onToggle} title="Collapse" style={{ color: "var(--text-muted)" }}>
           <ChevronLeft size={16} />
         </button>
@@ -139,8 +133,8 @@ export default function ConversationSidebar({ collapsed, onToggle, activeId, onS
       <div className="p-2">
         <button
           onClick={onNewChat}
-          className="flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors hover:opacity-80"
-          style={{ borderColor: "var(--border)", background: "var(--surface-2)", color: "var(--text-primary)" }}
+          className="flex w-full items-center gap-2 border px-3 py-2 text-sm opacity-80 transition-opacity duration-[var(--duration-base)] ease-vivid hover:opacity-100"
+          style={{ borderColor: "var(--border-strong)", color: "var(--text-primary)" }}
         >
           <MessageSquarePlus size={15} />
           New chat
@@ -149,15 +143,15 @@ export default function ConversationSidebar({ collapsed, onToggle, activeId, onS
 
       <div className="px-2 pb-2">
         <div
-          className="flex items-center gap-2 rounded-lg border px-2 py-1.5"
-          style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}
+          className="flex items-center gap-2 border px-2 py-1.5"
+          style={{ borderColor: "var(--border-strong)", background: "var(--surface-2)" }}
         >
           <Search size={14} style={{ color: "var(--text-muted)" }} />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search conversations..."
-            className="w-full bg-transparent text-xs outline-none"
+            className="w-full bg-transparent text-xs outline-none placeholder:text-[var(--text-muted)]"
             style={{ color: "var(--text-primary)" }}
           />
         </div>
@@ -193,62 +187,61 @@ export default function ConversationSidebar({ collapsed, onToggle, activeId, onS
             </p>
           </div>
         )}
-        <div className="flex flex-col gap-1">
-          {filtered.map((item) => (
-            <div
-              key={item.id}
-              onContextMenu={(e) => openMenu(e, item.id)}
-              className="group relative flex flex-col gap-0.5 rounded-lg px-2.5 py-2 text-left transition-colors hover:opacity-90"
-              style={{
-                background: item.id === activeId ? "var(--surface-2)" : "transparent",
-                border: item.id === activeId ? "1px solid var(--border-strong)" : "1px solid transparent",
-                cursor: renamingId === item.id ? "default" : "pointer",
-              }}
-              onClick={() => renamingId !== item.id && onSelect(item.id)}
-            >
-              {renamingId === item.id ? (
-                <input
-                  autoFocus
-                  value={renameDraft}
-                  onChange={(e) => setRenameDraft(e.target.value)}
-                  onClick={(e) => e.stopPropagation()}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") commitRename(item.id);
-                    if (e.key === "Escape") setRenamingId(null);
-                  }}
-                  onBlur={() => commitRename(item.id)}
-                  className="rounded border bg-transparent px-1 text-xs font-medium outline-none"
-                  style={{ borderColor: "var(--border-strong)", color: "var(--text-primary)" }}
-                />
-              ) : (
-                <div className="flex items-start justify-between gap-1">
-                  <span className="line-clamp-2 text-xs font-medium" style={{ color: "var(--text-primary)" }}>
-                    {item.title}
-                  </span>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openMenu(e, item.id);
+        <div className="flex flex-col">
+          {filtered.map((item) => {
+            const active = item.id === activeId;
+            return (
+              <div
+                key={item.id}
+                onContextMenu={(e) => openMenu(e, item.id)}
+                className="group relative flex flex-col gap-0.5 px-2.5 py-2 text-left transition-opacity duration-[var(--duration-base)] ease-vivid"
+                style={{ opacity: active ? 1 : 0.7, cursor: renamingId === item.id ? "default" : "pointer" }}
+                onClick={() => renamingId !== item.id && onSelect(item.id)}
+              >
+                {renamingId === item.id ? (
+                  <input
+                    autoFocus
+                    value={renameDraft}
+                    onChange={(e) => setRenameDraft(e.target.value)}
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") commitRename(item.id);
+                      if (e.key === "Escape") setRenamingId(null);
                     }}
-                    className="shrink-0 rounded px-1 text-xs opacity-0 transition-opacity group-hover:opacity-100"
-                    style={{ color: "var(--text-muted)" }}
-                    title="More options"
-                  >
-                    ⋯
-                  </button>
-                </div>
-              )}
-              <span className="flex items-center gap-2 text-[11px]" style={{ color: "var(--text-muted)" }}>
-                <span>{formatTime(item.updated_at)}</span>
-                {item.message_count > 0 && (
-                  <>
-                    <span>·</span>
-                    <span>{item.message_count} msg{item.message_count === 1 ? "" : "s"}</span>
-                  </>
+                    onBlur={() => commitRename(item.id)}
+                    className="border bg-transparent px-1 text-sm outline-none"
+                    style={{ borderColor: "var(--border-strong)", color: "var(--text-primary)" }}
+                  />
+                ) : (
+                  <div className="flex items-start justify-between gap-1">
+                    <span className="line-clamp-2 text-sm" style={{ color: "var(--text-primary)" }}>
+                      {item.title}
+                    </span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openMenu(e, item.id);
+                      }}
+                      className="shrink-0 px-1 text-xs opacity-0 transition-opacity group-hover:opacity-100"
+                      style={{ color: "var(--text-muted)" }}
+                      title="More options"
+                    >
+                      ⋯
+                    </button>
+                  </div>
                 )}
-              </span>
-            </div>
-          ))}
+                <span className="flex items-center gap-2 text-[11px]" style={{ color: "var(--text-muted)" }}>
+                  <span>{formatTime(item.updated_at)}</span>
+                  {item.message_count > 0 && (
+                    <>
+                      <span>·</span>
+                      <span>{item.message_count} msg{item.message_count === 1 ? "" : "s"}</span>
+                    </>
+                  )}
+                </span>
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -256,8 +249,8 @@ export default function ConversationSidebar({ collapsed, onToggle, activeId, onS
         <div
           ref={menuRef}
           onClick={(e) => e.stopPropagation()}
-          className="fixed z-50 flex w-40 flex-col overflow-hidden rounded-lg border shadow-lg"
-          style={{ top: menu.y, left: menu.x, borderColor: "var(--border)", background: "var(--surface-2)" }}
+          className="fixed z-50 flex w-40 flex-col overflow-hidden border"
+          style={{ top: menu.y, left: menu.x, borderColor: "var(--border-strong)", background: "var(--surface-2)" }}
         >
           <button
             onClick={() => startRename(items.find((i) => i.id === menu.id))}

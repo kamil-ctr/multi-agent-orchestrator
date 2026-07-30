@@ -1,17 +1,24 @@
 import { useCallback, useEffect, useState } from "react";
-import { SettingsIcon, Sun, Moon, CheckCircle2, XCircle, Volume2, Zap, TriangleAlert } from "lucide-react";
+import { CheckCircle2, XCircle, Volume2, Zap, TriangleAlert } from "lucide-react";
 import { fetchAgents } from "../api/client";
-import AgentAvatar from "../components/AgentAvatar";
+import { agentColor, agentInitial, agentLabel } from "../api/agentMeta";
 import Skeleton from "../components/Skeleton";
 import { useSettings } from "../context/SettingsContext";
-import { useTheme } from "../context/ThemeContext";
+
+function AgentLabel({ agent }) {
+  const color = agentColor(agent);
+  return (
+    <span className="text-2xs uppercase" style={{ color, letterSpacing: "var(--tracking-label)" }}>
+      {agentInitial(agent)} {agentLabel(agent)}
+    </span>
+  );
+}
 
 export default function SettingsPage() {
   const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const { settings, toggleAgent, update } = useSettings();
-  const { theme, toggleTheme } = useTheme();
 
   const loadAgents = useCallback(() => {
     setLoading(true);
@@ -25,52 +32,25 @@ export default function SettingsPage() {
   useEffect(loadAgents, [loadAgents]);
 
   return (
-    <div className="mx-auto flex h-full max-w-3xl flex-col gap-8 overflow-y-auto px-4 py-8 sm:px-8">
-      <div className="flex items-center gap-2">
-        <SettingsIcon size={22} style={{ color: "var(--accent)" }} />
-        <h1 className="text-xl font-semibold" style={{ color: "var(--text-primary)" }}>
-          Settings
-        </h1>
-      </div>
+    <div className="mx-auto flex h-full max-w-3xl flex-col gap-8 overflow-y-auto px-4 py-8 sm:px-8" style={{ background: "var(--surface-0)" }}>
+      <h1
+        className="uppercase"
+        style={{
+          fontSize: "var(--text-xl)",
+          fontWeight: "var(--weight-regular)",
+          letterSpacing: "var(--tracking-heading)",
+          color: "var(--text-primary)",
+        }}
+      >
+        Settings
+      </h1>
 
       <section>
-        <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
-          Appearance
-        </h2>
-        <div
-          className="flex items-center justify-between rounded-xl border p-4"
-          style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}
-        >
-          <div>
-            <div className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
-              Theme
-            </div>
-            <div className="text-xs" style={{ color: "var(--text-muted)" }}>
-              Dark by default — toggle for light mode.
-            </div>
-          </div>
-          <button
-            onClick={toggleTheme}
-            className="flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm"
-            style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}
-          >
-            {theme === "dark" ? <Moon size={14} /> : <Sun size={14} />}
-            {theme === "dark" ? "Dark" : "Light"}
-          </button>
-        </div>
-      </section>
-
-      <section>
-        <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
-          Voice
-        </h2>
-        <div
-          className="flex flex-col gap-4 rounded-xl border p-4"
-          style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}
-        >
+        <h2 className="label mb-2">Voice</h2>
+        <div className="flex flex-col gap-4 border p-4" style={{ borderColor: "var(--border-strong)" }}>
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+              <div className="text-sm" style={{ color: "var(--text-primary)" }}>
                 Auto-read answers
               </div>
               <div className="text-xs" style={{ color: "var(--text-muted)" }}>
@@ -105,7 +85,7 @@ export default function SettingsPage() {
                 value={settings.voiceRate}
                 onChange={(e) => update({ voiceRate: Number(e.target.value) })}
               />
-              <span className="w-10 text-right text-xs tabular-nums" style={{ color: "var(--text-muted)" }}>
+              <span className="numeric w-10 text-right text-xs" style={{ color: "var(--text-muted)" }}>
                 {settings.voiceRate.toFixed(2)}x
               </span>
             </div>
@@ -114,16 +94,11 @@ export default function SettingsPage() {
       </section>
 
       <section>
-        <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
-          Caching
-        </h2>
-        <div
-          className="flex flex-col gap-4 rounded-xl border p-4"
-          style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}
-        >
+        <h2 className="label mb-2">Caching</h2>
+        <div className="flex flex-col gap-4 border p-4" style={{ borderColor: "var(--border-strong)" }}>
           <div className="flex items-center justify-between">
             <div>
-              <div className="flex items-center gap-1.5 text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+              <div className="flex items-center gap-1.5 text-sm" style={{ color: "var(--text-primary)" }}>
                 <Zap size={13} /> Semantic cache
               </div>
               <div className="text-xs" style={{ color: "var(--text-muted)" }}>
@@ -159,7 +134,7 @@ export default function SettingsPage() {
                 value={settings.semanticCacheThreshold}
                 onChange={(e) => update({ semanticCacheThreshold: Number(e.target.value) })}
               />
-              <span className="w-10 text-right text-xs tabular-nums" style={{ color: "var(--text-muted)" }}>
+              <span className="numeric w-10 text-right text-xs" style={{ color: "var(--text-muted)" }}>
                 {settings.semanticCacheThreshold.toFixed(2)}
               </span>
             </div>
@@ -168,23 +143,16 @@ export default function SettingsPage() {
       </section>
 
       <section>
-        <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
-          Agents
-        </h2>
+        <h2 className="label mb-2">Agents</h2>
         <p className="mb-3 text-xs" style={{ color: "var(--text-muted)" }}>
           Toggle which agents are dispatched on new queries. Key status is read from the server's{" "}
           <code>.env</code> — never shown here.
         </p>
         {loading && (
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col">
             {[0, 1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="flex items-center justify-between rounded-xl border p-3"
-                style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}
-              >
+              <div key={i} className="flex items-center justify-between border-t p-3" style={{ borderColor: "var(--border-strong)" }}>
                 <div className="flex items-center gap-3">
-                  <Skeleton className="h-7 w-7 rounded-full" />
                   <Skeleton className="h-3 w-20" />
                 </div>
                 <Skeleton className="h-6 w-11 rounded-full" />
@@ -193,39 +161,37 @@ export default function SettingsPage() {
           </div>
         )}
         {!loading && loadError && (
-          <div
-            className="flex flex-col items-center gap-2 rounded-xl border p-6 text-center"
-            style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}
-          >
+          <div className="flex flex-col items-center gap-2 border p-6 text-center" style={{ borderColor: "var(--border-strong)" }}>
             <TriangleAlert size={18} style={{ color: "var(--text-muted)" }} />
             <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
               Couldn't load agents — check that the backend is running.
             </p>
-            <button onClick={loadAgents} className="text-xs font-medium hover:opacity-80" style={{ color: "var(--accent)" }}>
+            <button
+              onClick={loadAgents}
+              className="text-xs opacity-70 transition-opacity duration-[var(--duration-base)] ease-vivid hover:opacity-100"
+              style={{ color: "var(--text-primary)" }}
+            >
               Retry
             </button>
           </div>
         )}
         {!loading && !loadError && (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col">
           {agents.map((agent) => {
             const isOn = !settings.disabledAgents.includes(agent.name);
             return (
               <div
                 key={agent.name}
-                className="flex items-center justify-between rounded-xl border p-3"
-                style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}
+                className="flex items-center justify-between border-t p-3"
+                style={{ borderColor: "var(--border-strong)" }}
               >
                 <div className="flex items-center gap-3">
-                  <AgentAvatar name={agent.name} showLabel />
-                  <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+                  <AgentLabel agent={agent.name} />
+                  <span className="numeric text-xs" style={{ color: "var(--text-muted)" }}>
                     {agent.model}
                   </span>
                   {agent.supports_vision && (
-                    <span
-                      className="rounded-full px-2 py-0.5 text-[10px] font-medium"
-                      style={{ background: "var(--surface-1)", color: "var(--text-muted)" }}
-                    >
+                    <span className="text-2xs uppercase" style={{ color: "var(--text-muted)", letterSpacing: "var(--tracking-label)" }}>
                       vision
                     </span>
                   )}
